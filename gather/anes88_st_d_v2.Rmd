@@ -1,0 +1,600 @@
+---
+title: "anes"
+author: "Ryan Zhang"
+date: "10/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(Hmisc)
+library(rqPen)
+library(vctrs)
+library(foreign)
+library(ggthemes)
+
+```
+
+
+# Reading Data
+
+```{r warning=FALSE}
+
+# Reading in the three datasets.
+
+anes88_national <- spss.get("raw_data/anes/anes88-national.POR", 
+                            use.value.labels = TRUE)
+anes88_st <- spss.get("raw_data/anes/anes88-super-tuesday.POR", 
+                      use.value.labels = TRUE)
+
+```
+
+
+## Cleaning Data (Part One)
+
+# ```{r}
+# 
+# # Cleaning the 1988 dataset
+# # Case 0
+# 
+# anes88_st_clean_0 <- anes88_st %>%
+#   
+#   # Voting from VST0457 to VST0462
+#   # Feeling thermometers from VST0171 to VST0189
+#   # Traits from VST0301 to VST0424
+#   # Ideology from VST0425 to VST0441
+#   # Viability from VST0229 to VST0241
+#   # Electability from VST0242 to VST0254
+#   
+#   select(VST0001, VST0457:VST0462, VST0171:VST0189, VST0301:VST0424,
+#          VST0425:VST0441, VST0229:VST0241, VST0242:VST0254)
+# 
+# # Case 1
+# 
+# anes88_st_clean_1 <- anes88_st %>%
+# 
+#   # Voting from VST1528 to VST1561
+#   # Feeling thermometers from VST1301 to VST1317
+#   # Traits from VST1409 to VST1527
+#   # Ideology not asked
+#   # Viability from VST1322 to VST1331
+#   # Electability from VST1332 to VST1341 
+# 
+#   select(VST1001, VST1528:VST1561, VST1301:VST1317, VST1409:VST1527,
+#          VST1322:VST1331, VST1332:VST1341)
+# 
+# ```
+
+## Cleaning Data (Part Two)
+
+```{r}
+
+df88st <- anes88_st %>%
+  
+  # Select ID, voting, lib/con and feeling thermometer, viability, electability, ...
+  
+  # Voting from VST0457 to VST0462
+  # Feeling thermometers from VST0171 to VST0189
+  # Viability from VST0229 to VST0241
+  # Electability from VST0242 to VST0254  
+  # Ideology from VST0425 to VST0441
+  # Traits from VST0301 to VST0424
+    
+  select(VST0001, VST0459, 
+         VST0171, VST0172, VST0173, VST0175, VST0176,
+         VST0229, VST0230, VST0231, VST0233, VST0234,
+         VST0242, VST0243, VST0244, VST0246, VST0247,
+         
+         VST0425, 
+         VST0428, VST0429, VST0430, VST0432, VST0433,
+         
+         VST0304, VST0306, VST0307, VST0308, 
+         VST0312, VST0314, VST0315, VST0316, 
+         VST0320, VST0322, VST0323, VST0324,
+         VST0336, VST0338, VST0339, VST0340, 
+         VST0344, VST0346, VST0347, VST0348
+         )
+
+# rename columns
+
+my_candidate <- c("GORE","DUKAKIS","HART","JACKSON","GEPHARDT")
+my_candidate_id <- as.integer(c(14, 12, 15, 16, 13))
+
+my_names <- c("ID", "voting", 
+              "Feeling1", "Feeling2", "Feeling3", "Feeling4", "Feeling5",
+              "Viability1", "Viability2", "Viability3", "Viability4", "Viability5",
+              "Electability1", "Electability2", "Electability3", "Electability4", "Electability5",
+              
+              "Ideology", 
+              "Ideology1", "Ideology2", "Ideology3", "Ideology4", "Ideology5",
+              
+              "Inspire1", "Decent1", "Cares1", "Know1",
+              "Inspire2", "Decent2", "Cares2", "Know2",
+              "Inspire3", "Decent3", "Cares3", "Know3",
+              "Inspire4", "Decent4", "Cares4", "Know4",
+              "Inspire5", "Decent5", "Cares5", "Know5"
+              )
+
+colnames(df88st) <- my_names
+
+```
+
+
+```{r}
+
+df <- data.frame(my_candidate_id, my_candidate, stringsAsFactors = FALSE)
+df88st <-merge(df88st, df, by.x = "voting", by.y = "my_candidate_id", 
+               all.x = TRUE)
+names(df88st)[names(df88st) == "my_candidate"] <- "VoteCandidate"
+
+```
+
+
+```{r eval=FALSE, include=FALSE}
+
+# Cerify column renaming, candidates and their number 1-5 mapping must be 
+# correct
+
+str(df88st)
+
+```
+
+
+## Normalize ratings
+
+```{r warning=FALSE}
+
+# 1) Normalize feeling thermometers
+
+my_rescale1 <- function(X) { 
+  if (max(X, na.rm = TRUE) == min(X, na.rm = TRUE)) 
+    X / sum(X, na.rm = TRUE)
+  else
+    round((X - min(X, na.rm = TRUE)) / (max(X, na.rm = TRUE) - min(X, na.rm = TRUE)), 6)
+}
+
+# NORMALIZED_FT
+df88st[, c("NORMALIZED_FT1", "NORMALIZED_FT2", "NORMALIZED_FT3", 
+           "NORMALIZED_FT4", "NORMALIZED_FT5")] <- t(apply(
+             df88st[, c("Feeling1", "Feeling2", "Feeling3", "Feeling4", 
+                        "Feeling5")], MARGIN = 1, FUN = my_rescale1))
+
+# 2) Normalize viability
+
+my_rescale2 <- function(X) round(X / sum(X, na.rm = TRUE), 6)
+
+df88st[, c("NORMALIZED_VIABILITY1", "NORMALIZED_VIABILITY2", 
+           "NORMALIZED_VIABILITY3", "NORMALIZED_VIABILITY4", 
+           "NORMALIZED_VIABILITY5")] <- t(apply(df88st[, c("Viability1", 
+                                                           "Viability2", 
+                                                           "Viability3", 
+                                                           "Viability4", 
+                                                           "Viability5")], 
+                                                MARGIN = 1, FUN = my_rescale2))
+
+df88st[, c("NORMALIZED_ELECTABILITY1", "NORMALIZED_ELECTABILITY2", 
+           "NORMALIZED_ELECTABILITY3", "NORMALIZED_ELECTABILITY4", 
+           "NORMALIZED_ELECTABILITY5")] <- t(apply(
+             df88st[, c("Electability1", "Electability2", "Electability3", 
+                        "Electability4", "Electability5")], 
+             MARGIN = 1, FUN = my_rescale2))
+
+# 3) Rescale ideological distance
+
+df88st[, c("temp_1", "temp_2", "temp_3", "temp_4", "temp_5")] <- square(
+  df88st[, c("Ideology1", "Ideology2", "Ideology3", "Ideology4", "Ideology5")] -
+    df88st[, "Ideology"])
+
+df88st <- df88st %>%
+  rowwise() %>%
+  mutate(temp_min = min(temp_1, temp_2, temp_3, temp_4, temp_5)) %>%
+  mutate(temp_max_min = max(temp_1, temp_2, temp_3, temp_4, temp_5) -
+           min(temp_1, temp_2, temp_3, temp_4, temp_5)) %>%
+  mutate(NORMALIZED_IDEOLOGY1 = ifelse(temp_max_min == 0,
+                                       ifelse(temp_min == 0, 0, 0.5),
+                                       round((temp_1 - temp_min) / 
+                                               temp_max_min, 6))) %>%
+  mutate(NORMALIZED_IDEOLOGY2 = ifelse(temp_max_min == 0,
+                                       ifelse(temp_min == 0, 0, 0.5),
+                                       round((temp_2 - temp_min) / 
+                                               temp_max_min, 6))) %>%
+  mutate(NORMALIZED_IDEOLOGY3 = ifelse(temp_max_min == 0,
+                                       ifelse(temp_min == 0, 0, 0.5),
+                                       round((temp_3 - temp_min) / 
+                                               temp_max_min, 6))) %>%
+  mutate(NORMALIZED_IDEOLOGY4 = ifelse(temp_max_min == 0,
+                                       ifelse(temp_min == 0, 0, 0.5),
+                                       round((temp_4 - temp_min) / 
+                                               temp_max_min, 6))) %>%
+  mutate(NORMALIZED_IDEOLOGY5 = ifelse(temp_max_min == 0,
+                                       ifelse(temp_min == 0, 0, 0.5),
+                                       round((temp_5 - temp_min) / 
+                                               temp_max_min, 6))) %>%
+  select(-starts_with("temp_"))
+
+# 4) Average candidate traits
+
+df88st$TRAITS1 = abs(rowMeans(df88st[, c("Inspire1", "Decent1", "Cares1", 
+                                         "Know1")], na.rm = TRUE) - 6) / 5
+df88st$TRAITS2 = abs(rowMeans(df88st[, c("Inspire2", "Decent2", "Cares2", 
+                                         "Know2")], na.rm = TRUE) - 6) / 5
+df88st$TRAITS3 = abs(rowMeans(df88st[, c("Inspire3", "Decent3", "Cares3", 
+                                         "Know3")], na.rm = TRUE) - 6) / 5
+df88st$TRAITS4 = abs(rowMeans(df88st[, c("Inspire4", "Decent4", "Cares4", 
+                                         "Know4")], na.rm = TRUE) - 6) / 5
+df88st$TRAITS5 = abs(rowMeans(df88st[, c("Inspire5", "Decent5", "Cares5", 
+                                         "Know5")], na.rm = TRUE) - 6) / 5
+
+# 5) Convert NaN to NA
+
+df88st[df88st == "NaN"] <- NA
+
+```
+ 
+ 
+```{r}
+
+# Verify  calculations
+
+df88st[, c("NORMALIZED_FT1", "NORMALIZED_FT2", "NORMALIZED_FT3", 
+           "NORMALIZED_FT4", "NORMALIZED_FT5", "Feeling1", "Feeling2", 
+           "Feeling3", "Feeling4", "Feeling5")]
+df88st[, c("NORMALIZED_VIABILITY1", "NORMALIZED_VIABILITY2", 
+           "NORMALIZED_VIABILITY3", "NORMALIZED_VIABILITY4", 
+           "NORMALIZED_VIABILITY5", "Viability1", "Viability2", "Viability3", 
+           "Viability4", "Viability5")]
+df88st[, c("NORMALIZED_ELECTABILITY1", "NORMALIZED_ELECTABILITY2", 
+           "NORMALIZED_ELECTABILITY3", "NORMALIZED_ELECTABILITY4", 
+           "NORMALIZED_ELECTABILITY5", "Electability1", "Electability2", 
+           "Electability3", "Electability4", "Electability5")]
+df88st[, c("NORMALIZED_IDEOLOGY1", "NORMALIZED_IDEOLOGY2", 
+           "NORMALIZED_IDEOLOGY3", "NORMALIZED_IDEOLOGY4", 
+           "NORMALIZED_IDEOLOGY5", "Ideology", "Ideology1", "Ideology2", 
+           "Ideology3", "Ideology4", "Ideology5")]
+df88st[, c("TRAITS1", "Inspire1", "Decent1", "Cares1", "Know1")]
+df88st[, c("TRAITS2", "Inspire2", "Decent2", "Cares2", "Know2")]
+df88st[, c("TRAITS3", "Inspire3", "Decent3", "Cares3", "Know3")]
+df88st[, c("TRAITS4", "Inspire4", "Decent4", "Cares4", "Know4")]
+df88st[, c("TRAITS5", "Inspire5", "Decent5", "Cares5", "Know5")]
+
+```
+ 
+ 
+## Pivoting Data (Part Two)
+
+```{r}
+
+# 1) Subset: df88st_normalized_ft
+
+my_cols <- c("ID", "VoteCandidate", "NORMALIZED_FT1", "NORMALIZED_FT2", "NORMALIZED_FT3", "NORMALIZED_FT4", "NORMALIZED_FT5")
+df <- df88st[, my_cols]
+colnames(df) <- c("ID", "VoteCandidate", my_candidate)
+
+df <- df %>%
+  pivot_longer(names_to = "Candidate", 
+               values_to = "NORMALIZED_FT", 
+               cols = -c(ID, VoteCandidate))
+df_final <- df
+
+# 2) Subset: df88st_normalized_viability
+
+my_cols <- c("ID", "NORMALIZED_VIABILITY1", "NORMALIZED_VIABILITY2", "NORMALIZED_VIABILITY3", "NORMALIZED_VIABILITY4", "NORMALIZED_VIABILITY5")
+df <- df88st[, my_cols]
+colnames(df) <- c("ID", my_candidate)
+
+df <- df %>%
+  pivot_longer(names_to = "Candidate", 
+               values_to = "NORMALIZED_VIABILITY", 
+               cols = -ID)
+
+df_final = merge(df_final, df, by=c("ID", "Candidate"))
+
+# Convert VoteCandidate to 0, 1
+
+df_final$VoteCandidate <-  1 * (df_final$Candidate == df_final$VoteCandidate)
+
+# 3) Subset: df88st_normalized_electability
+
+my_cols <- c("ID", "NORMALIZED_ELECTABILITY1", "NORMALIZED_ELECTABILITY2", 
+             "NORMALIZED_ELECTABILITY3", "NORMALIZED_ELECTABILITY4", 
+             "NORMALIZED_ELECTABILITY5")
+df <- df88st[, my_cols]
+colnames(df) <- c("ID", my_candidate)
+
+df <- df %>%
+  pivot_longer(names_to = "Candidate", 
+               values_to = "NORMALIZED_ELECTABILITY", 
+               cols = -ID)
+
+df_final = merge(df_final, df, by = c("ID", "Candidate"))
+
+# 4) Subset: df88st_normalized_ideology
+
+my_cols <- c("ID", "NORMALIZED_IDEOLOGY1", "NORMALIZED_IDEOLOGY2", 
+             "NORMALIZED_IDEOLOGY3", "NORMALIZED_IDEOLOGY4", 
+             "NORMALIZED_IDEOLOGY5")
+df <- df88st[, my_cols]
+colnames(df) <- c("ID", my_candidate)
+
+df <- df %>%
+  pivot_longer(names_to = "Candidate", 
+               values_to = "NORMALIZED_IDEOLOGY", 
+               cols = -ID)
+
+df_final = merge(df_final, df, by = c("ID", "Candidate"))
+
+# 5) Subset: df88st_traits
+
+my_cols <- c("ID", "TRAITS1", "TRAITS2", "TRAITS3", "TRAITS4", "TRAITS5")
+df <- df88st[, my_cols]
+colnames(df) <- c("ID", my_candidate)
+
+df <- df %>%
+  pivot_longer(names_to = "Candidate", 
+               values_to = "TRAITS", 
+               cols = -ID)
+
+df_final = merge(df_final, df, by = c("ID", "Candidate"))
+
+```
+
+
+```{r}
+
+# Create new columns using candidate names, assign 0 to all
+df_final[, sort(my_candidate)] <- 0
+
+# Get index when intersection column name/value matches
+my_index <- cbind(seq_len(nrow(df_final)), 
+                  match(df_final$Candidate, names(df_final)[-1]))
+
+# Assign 1 to my_index cells
+df_final[-1][my_index] <- 1
+
+```
+
+
+## Writing Cleaned Dataset
+
+```{r}
+
+df_final_1 <- df_final %>%
+  drop_na() 
+
+```
+
+
+```{r}
+
+df_final %>%
+  drop_na() %>%
+  write.dta("clean_data/df88st_d.dta")
+
+```
+
+
+# Calculating Buckets
+
+```{r}
+
+df_final_2 <- df_final %>%
+  rowwise() %>%
+  mutate(SINCERE = (NORMALIZED_FT + TRAITS) / 2,
+         STRATEGIC = (NORMALIZED_VIABILITY + NORMALIZED_ELECTABILITY) / 2) %>%
+  select(ID, Candidate, VoteCandidate, SINCERE, STRATEGIC) %>%
+  group_by(ID) %>%
+  mutate(SINCERE_MAX1 = max(SINCERE),
+         STRATEGIC_MAX1 = max(STRATEGIC)) %>%
+  mutate(SINCERE_MAX2 = ifelse(SINCERE == SINCERE_MAX1, 1, 0),
+         STRATEGIC_MAX2 = ifelse(STRATEGIC == STRATEGIC_MAX1, 1, 0)) %>%
+  filter(VoteCandidate == 1) %>%
+  drop_na()
+
+```
+
+
+```{r}
+
+df_final_2 %>%
+  group_by(Candidate, SINCERE_MAX2, STRATEGIC_MAX2) %>%
+  count() %>%
+  group_by(Candidate) %>%
+  mutate(percent = n / sum(n),
+         df = "df88st_d") %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure3/df88st_d_counts.csv")
+
+df_final_2 %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2) %>%
+  count() %>%
+  group_by() %>%
+  mutate(percent = n / sum(n),
+         df = "df88st_d") %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure3/df88st_d_counts_aggregate.csv")
+
+```
+
+
+## Make Graphs
+
+```{r}
+
+df_final %>%
+  ggplot(aes(x = NORMALIZED_ELECTABILITY)) +
+    geom_density() +
+    facet_wrap(~ Candidate) +
+    theme_bw() + 
+    labs(
+      title = "Candidate Electability",
+      x = "Normalized Electability",
+      y = "Density"
+    ) +
+  ggsave("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure2/anes88_st_d_electability.bmp", width = 7.5, height = 4.5)
+
+df_final %>%
+  ggplot(aes(x = NORMALIZED_VIABILITY)) +
+    geom_density() +
+    facet_wrap(~ Candidate) +
+    theme_bw() + 
+    labs(
+      title = "Candidate Viability",
+      x = "Normalized Viability",
+      y = "Density"
+    ) +
+  ggsave("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure2/anes88_st_d_viability.bmp", width = 7.5, height = 4.5)
+
+```
+
+
+## Demograhic Tables
+
+```{r}
+
+# Race
+
+df_final_2 %>%
+  inner_join(anes88_st, by = c("ID" = "VST0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VST0564) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VST0564) %>%
+  mutate(percent = n / sum(n),
+         df = "anes88_st_d",
+         race = case_when(
+           VST0564 == "1" ~ "WHITE",
+           VST0564 == "2" ~ "BLACK",
+           VST0564 == "3" ~ "NATIVE",
+           VST0564 == "4" ~ "ASIAN",
+           VST0564 == "7" ~ "OTHER")) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/race/anes88_st_d_race.csv")
+
+# Education
+
+df_final_2 %>%
+  inner_join(anes88_st, by = c("ID" = "VST0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VST0541) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VST0541) %>%
+  mutate(percent = n / sum(n),
+         df = "anes88_st_d",
+         education = case_when(
+           VST0541 == "1" ~ "GRADE8-",
+           VST0541 == "2" ~ "SOMEHS",
+           VST0541 == "3" ~ "HS",
+           VST0541 == "4" ~ "SOMECOLLEGE",
+           VST0541 == "5" ~ "BACHELORS",
+           VST0541 == "6" ~ "PROFESSIONAL")) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/education/anes88_st_d_education.csv")
+
+# Age
+
+df_final_2 %>%
+  inner_join(anes88_st, by = c("ID" = "VST0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VST0536) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VST0536) %>%
+  mutate(percent = n / sum(n),
+         df = "anes88_st_d",
+         age = VST0536) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/age/anes88_st_d_age.csv")
+
+# Ideology
+
+df_final_2 %>%
+  inner_join(anes88_st, by = c("ID" = "VST0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VST0425) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VST0425) %>%
+  mutate(percent = n / sum(n),
+         df = "anes88_st_d",
+         ideology = case_when(
+           VST0425 == "1" ~ "VERYLIBERAL",
+           VST0425 == "2" ~ "SOMEWHATLIBERAL",
+           VST0425 == "3" ~ "SOMEWHATLIBERAL",
+           VST0425 == "4" ~ "MODERATE",
+           VST0425 == "5" ~ "SOMEWHATCONSERVATIVE",
+           VST0425 == "6" ~ "SOMEWHATCONSERVATIVE",
+           VST0425 == "7" ~ "VERYCONSERVATIVE")) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/ideology/anes88_st_d_ideology.csv")
+
+# Party ID strength
+
+df_final_2 %>%
+  inner_join(anes88_st, by = c("ID" = "VST0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VST0264) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VST0264) %>%
+  mutate(percent = n / sum(n),
+         df = "anes88_st_d",
+         party_strength = case_when(
+           VST0264 == "0" ~ "STRONG",
+           VST0264 == "1" ~ "NOTVERYSTRONG",
+           VST0264 == "2" ~ "NOTVERYSTRONG",
+           # VST0264 == "3" ~ "NOTVERYSTRONG",
+           VST0264 == "4" ~ "NOTVERYSTRONG",
+           VST0264 == "5" ~ "NOTVERYSTRONG",
+           VST0264 == "6" ~ "STRONG",
+           VST0264 == "7" ~ "OTHER",
+           VST0264 == "8" ~ "OTHER")) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/party_strength/anes88_st_d_party_strength.csv")
+
+# Political interest
+
+df_final_2 %>%
+  inner_join(anes88_st, by = c("ID" = "VST0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VST0108) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VST0108) %>%
+  mutate(percent = n / sum(n),
+         df = "anes88_st_d",
+         political_interest = case_when(
+           VST0108 == "1" ~ "VERYCLOSELY",
+           VST0108 == "2" ~ "SOMEWHATCLOSELY",
+           VST0108 == "3" ~ "NOTTOOCLOSELY")) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/political_interest/anes88_st_d_political_interest.csv")
+
+```
+
+
+```{r include=FALSE}
+
+rm(list = ls())
+
+```
+

@@ -1,0 +1,12 @@
+"","SINCERE_MAX2","STRATEGIC_MAX2","cMA02","n","sincere_strategic","percent","df","party_strength"
+"1",0,0,1,12,1,0.0254777070063694,"naes04_national","STRONG"
+"2",0,0,2,9,1,0.0362903225806452,"naes04_national","NOTVERYSTRONG"
+"3",0,1,1,69,3,0.146496815286624,"naes04_national","STRONG"
+"4",0,1,2,37,3,0.149193548387097,"naes04_national","NOTVERYSTRONG"
+"5",0,1,NA,10,3,0.217391304347826,"naes04_national",NA
+"6",1,0,1,80,2,0.169851380042463,"naes04_national","STRONG"
+"7",1,0,2,55,2,0.221774193548387,"naes04_national","NOTVERYSTRONG"
+"8",1,0,NA,7,2,0.152173913043478,"naes04_national",NA
+"9",1,1,1,310,4,0.658174097664543,"naes04_national","STRONG"
+"10",1,1,2,147,4,0.592741935483871,"naes04_national","NOTVERYSTRONG"
+"11",1,1,NA,29,4,0.630434782608696,"naes04_national",NA

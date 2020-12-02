@@ -1,0 +1,73 @@
+---
+title: "figure10_age"
+author: "Ryan Zhang"
+date: "11/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+```
+
+
+```{r}
+
+anes84_cm_d <- read_csv('anes84_cm_d_age.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, age)
+anes88_st_d <- read_csv('anes88_st_d_age.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, age)
+anes88_st_r <- read_csv('anes88_st_r_age.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, age)
+naes00_national_d <- read_csv('naes00_national_d_age.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, age) 
+naes00_national_r <- read_csv('naes00_national_r_age.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, age)
+naes04_national <- read_csv('naes04_national_age.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, age)
+naes08_phone_d <- read_csv('naes08_phone_d_age.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, age)
+naes08_phone_r <- read_csv('naes08_phone_r_age.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, age)
+
+allFrame <- data.frame(rbind(anes84_cm_d, anes88_st_d, anes88_st_r,
+                             naes00_national_d, naes00_national_r,
+                             naes04_national, naes08_phone_d, naes08_phone_r))
+
+# Instrumental voting
+
+allFrame2 <- allFrame %>%
+#  filter(df != "anes84_cm_d") %>%
+#  filter(df != "anes88_st_d") %>%
+#  filter(df != "anes88_st_r") %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, age) %>%
+  summarize(count = sum(n)) %>%
+  group_by(age) %>%
+  mutate(percent = count / sum(count)) %>%
+  select(-count) %>%
+  filter(SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1)
+
+allFrame2 %>%
+  ggplot(aes(x = age, y = percent)) + 
+    geom_col()
+
+# Expressive voting
+
+allFrame2 <- allFrame %>%
+#  filter(df != "anes84_cm_d") %>%
+#  filter(df != "anes88_st_d") %>%
+#  filter(df != "anes88_st_r") %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, age) %>%
+  summarize(count = sum(n)) %>%
+  group_by(age) %>%
+  mutate(percent = count / sum(count)) %>%
+  select(-count) %>%
+  filter(SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0)
+
+allFrame2 %>%
+  ggplot(aes(x = age, y = percent)) + 
+    geom_col()
+
+```
+

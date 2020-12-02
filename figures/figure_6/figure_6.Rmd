@@ -1,0 +1,36 @@
+---
+title: "regressions"
+author: "Ryan Zhang"
+date: "10/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+library(tidyverse)
+
+```
+
+
+```{r}
+
+mydata <- read_csv('/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure6/electability_newspaper_search.csv',
+                   col_type = cols(Year = col_double(),
+                                   News_Mentions = col_double())) %>%
+  drop_na()
+
+mydata %>%
+  ggplot(aes(x = Year, y = News_Mentions)) + 
+  geom_point() + 
+  geom_line() +
+  theme_bw() + 
+  ylim(0, 850) + 
+  labs(
+    title = "Election-Year Articles with \"Electability\" and \"Electable\" References",
+    subtitle = "From the New York Times, Washington Post, and Christian Science Monitor.",
+    x = "Year",
+    y = "Count",
+    caption = "Note: search words are case insensitive."
+    ) + 
+  ggsave("newspaper_mentions.bmp", width = 7.5, height = 4.5)
+```

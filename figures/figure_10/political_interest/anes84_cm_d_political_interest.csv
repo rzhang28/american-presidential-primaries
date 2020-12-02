@@ -1,0 +1,10 @@
+"","SINCERE_MAX2","STRATEGIC_MAX2","VCM0147","n","sincere_strategic","percent","df","political_interest"
+"1",0,0,1,2,1,0.0555555555555556,"anes84_cm_d","VERYCLOSELY"
+"2",0,1,1,3,3,0.0833333333333333,"anes84_cm_d","VERYCLOSELY"
+"3",0,1,3,3,3,0.0967741935483871,"anes84_cm_d","NOTTOOCLOSELY"
+"4",0,1,5,1,3,0.2,"anes84_cm_d",NA
+"5",1,0,1,5,2,0.138888888888889,"anes84_cm_d","VERYCLOSELY"
+"6",1,0,3,6,2,0.193548387096774,"anes84_cm_d","NOTTOOCLOSELY"
+"7",1,1,1,26,4,0.722222222222222,"anes84_cm_d","VERYCLOSELY"
+"8",1,1,3,22,4,0.709677419354839,"anes84_cm_d","NOTTOOCLOSELY"
+"9",1,1,5,4,4,0.8,"anes84_cm_d",NA

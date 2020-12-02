@@ -1,0 +1,534 @@
+---
+title: "anes"
+author: "Ryan Zhang"
+date: "10/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(Hmisc)
+library(rqPen)
+library(vctrs)
+library(foreign)
+library(lubridate)
+
+```
+
+
+# Reading Data
+
+```{r warning=FALSE}
+
+# Reading in the three datasets.
+
+anes84_national <- spss.get("raw_data/anes/anes84-national.por", 
+                            use.value.labels = TRUE)
+anes84_cm <- spss.get("raw_data/anes/anes84-continuous-monitoring.por", 
+                      use.value.labels = TRUE) %>%
+  mutate(date = as.Date(paste(VCM0105, VCM0106, 1984), format = "%m%d%Y")) %>%
+  filter(date <= "1984-03-13")
+
+```
+
+
+## Cleaning Data
+
+## Repositioning columns  
+
+```{r}
+
+df84cm <- anes84_cm %>%
+  
+  # Select ID, voting, lib/con and feeling thermometer, viability, and 
+  # electability
+  
+  # Voting VCM0735
+  # Feeling thermometers from VCM0220 to VCM0232
+  # Traits from VCM0437 to VCM0573
+  # Ideology from VCM0610 to VCM0637
+  # Viability from VCM0311 to VCM0316
+  # Electability from VCM1001 to VCM1007 
+  
+  select(VCM0001, VCM0735, 
+         VCM0222, VCM0227, VCM0232,
+         VCM0311, VCM0314, VCM0316,
+         VCM1002, VCM1005, VCM1007,
+         
+         VCM0613, 
+         VCM0625, VCM0629, VCM0633,
+         
+         VCM0438, VCM0444, VCM0445, VCM0447, 
+         VCM0522, VCM0528, VCM0529, VCM0531,
+         VCM0540, VCM0546, VCM0547, VCM0549, 
+         )
+
+my_candidate <- c("MONDALE","JACKSON","HART")
+my_candidate_id <- as.integer(c(1, 3, 5))
+
+my_names <- c("ID", "voting", 
+              "Feeling1", "Feeling2", "Feeling3",
+              "Viability1", "Viability2", "Viability3",
+              "Electability1", "Electability2", "Electability3", 
+
+              "Ideology", 
+              "Ideology1", "Ideology2", "Ideology3",
+              
+              "Inspire1", "Decent1", "Cares1", "Know1",
+              "Inspire2", "Decent2", "Cares2", "Know2",
+              "Inspire3", "Decent3", "Cares3", "Know3"
+              )
+
+colnames(df84cm) <- my_names
+
+```
+
+
+```{r}
+
+df <- data.frame(my_candidate_id, my_candidate, stringsAsFactors = FALSE)
+df84cm <-merge(df84cm, df, by.x = "voting", 
+               by.y = "my_candidate_id", all.x = TRUE)
+names(df84cm)[names(df84cm)=="my_candidate"] <- "VoteCandidate"
+
+```
+
+
+```{r eval=FALSE, include=FALSE}
+
+# Verify column renaming, candidates and their number 1-5 mapping must be 
+# correct.
+
+str(df84cm)
+
+```
+
+
+## Normalize ratings
+
+```{r warning=FALSE}
+
+# 1) Normalize feeling thermometers
+
+my_rescale1 <- function(X) { 
+  if (max(X, na.rm = TRUE) == min(X, na.rm = TRUE)) 
+    X / sum(X, na.rm = TRUE)
+  else
+    round((X - min(X, na.rm = TRUE)) /
+            (max(X, na.rm = TRUE) - min(X, na.rm = TRUE)), 6)
+}
+
+df84cm[, c("NORMALIZED_FT1", "NORMALIZED_FT2", "NORMALIZED_FT3")] <- t(apply(
+  df84cm[, c("Feeling1", "Feeling2", "Feeling3")],
+  MARGIN = 1, FUN = my_rescale1))
+
+# 2) Normalize viability
+
+my_rescale2 <- function(X) round(X / sum(X, na.rm = TRUE), 6)
+
+df84cm[, c("NORMALIZED_VIABILITY1", "NORMALIZED_VIABILITY2", 
+           "NORMALIZED_VIABILITY3")] <- t(apply(
+             df84cm[, c("Viability1", "Viability2", "Viability3")], 
+             MARGIN = 1, FUN = my_rescale2))
+
+df84cm[, c("NORMALIZED_ELECTABILITY1", "NORMALIZED_ELECTABILITY2", 
+           "NORMALIZED_ELECTABILITY3")] <- t(apply(
+             df84cm[, c("Electability1", "Electability2", "Electability3")],
+             MARGIN = 1, FUN = my_rescale2))
+
+# 3) Manipulate ideological distance
+
+df84cm[, c("temp_1", "temp_2", "temp_3")] <- square(
+  df84cm[, c("Ideology1", "Ideology2", "Ideology3")] - 
+    df84cm[, "Ideology"])
+
+df84cm <- df84cm %>%
+  rowwise() %>%
+  mutate(temp_min = min(temp_1, temp_2, temp_3)) %>%
+  mutate(temp_max_min = max(temp_1, temp_2, temp_3) - 
+           min(temp_1, temp_2, temp_3)) %>%
+  mutate(NORMALIZED_IDEOLOGY1 = ifelse(temp_max_min == 0,
+                                       ifelse(temp_min == 0, 0, 0.5),
+                                       round((temp_1 - temp_min) / 
+                                               temp_max_min, 6))) %>%
+  mutate(NORMALIZED_IDEOLOGY2 = ifelse(temp_max_min == 0,
+                                       ifelse(temp_min == 0, 0, 0.5),
+                                       round((temp_2 - temp_min) / 
+                                               temp_max_min, 6))) %>%
+  mutate(NORMALIZED_IDEOLOGY3 = ifelse(temp_max_min == 0,
+                                       ifelse(temp_min == 0, 0, 0.5),
+                                       round((temp_3 - temp_min) / 
+                                               temp_max_min, 6))) %>%
+  select(-starts_with("temp_") )
+
+# 4) Average candidate traits
+
+df84cm$TRAITS1 = abs(rowMeans(df84cm[, c("Inspire1", "Decent1", "Cares1", 
+                                         "Know1")], na.rm = TRUE) - 6) / 5
+df84cm$TRAITS2 = abs(rowMeans(df84cm[, c("Inspire2", "Decent2", "Cares2", 
+                                         "Know2")], na.rm = TRUE) - 6) / 5
+df84cm$TRAITS3 = abs(rowMeans(df84cm[, c("Inspire3", "Decent3", "Cares3", 
+                                         "Know3")], na.rm = TRUE) - 6) / 5
+
+# 5) Convert NaN to NA
+
+df84cm[df84cm == "NaN"] <- NA
+
+```
+ 
+ 
+```{r}
+
+# Verify  calculations
+
+df84cm[, c("NORMALIZED_FT1", "NORMALIZED_FT2", "NORMALIZED_FT3", 
+           "Feeling1", "Feeling2", "Feeling3")]
+df84cm[, c("NORMALIZED_VIABILITY1", "NORMALIZED_VIABILITY2", 
+           "NORMALIZED_VIABILITY3", "Viability1", "Viability2", "Viability3")]
+df84cm[, c("NORMALIZED_ELECTABILITY1", "NORMALIZED_ELECTABILITY2", 
+           "NORMALIZED_ELECTABILITY3", "Electability1", "Electability2", 
+           "Electability3")]
+df84cm[, c("NORMALIZED_IDEOLOGY1", "NORMALIZED_IDEOLOGY2", 
+           "NORMALIZED_IDEOLOGY3", "Ideology","Ideology1", "Ideology2",
+           "Ideology3")]
+df84cm[, c("TRAITS1", "Inspire1", "Decent1", "Cares1", "Know1")]
+df84cm[, c("TRAITS2", "Inspire2", "Decent2", "Cares2", "Know2")]
+df84cm[, c("TRAITS3", "Inspire3", "Decent3", "Cares3", "Know3")]
+
+```
+ 
+ 
+## Pivoting Data (Part Two)
+
+```{r}
+
+# 1) Subset: df84cm_normalized_ft
+
+my_cols <- c("ID", "VoteCandidate", "NORMALIZED_FT1", "NORMALIZED_FT2", 
+             "NORMALIZED_FT3")
+df <- df84cm[, my_cols]
+colnames(df) <- c("ID", "VoteCandidate", my_candidate)
+
+df <- df %>%
+  pivot_longer(names_to = "Candidate", 
+               values_to = "NORMALIZED_FT", 
+               cols = -c(ID, VoteCandidate))
+df_final <- df
+
+# 2) Subset: df84cm_normalized_viability
+
+my_cols <- c("ID", "NORMALIZED_VIABILITY1", "NORMALIZED_VIABILITY2", 
+             "NORMALIZED_VIABILITY3")
+df <- df84cm[, my_cols]
+colnames(df) <- c("ID", my_candidate)
+
+df <- df %>%
+  pivot_longer(names_to = "Candidate", 
+               values_to = "NORMALIZED_VIABILITY", 
+               cols = -ID)
+
+df_final = merge(df_final, df, by = c("ID", "Candidate"))
+
+# Convert VoteCandidate to 0, 1
+
+df_final$VoteCandidate <-  1 * (df_final$Candidate == df_final$VoteCandidate)
+
+# 3) Subset: df84cm_normalized_electability
+
+my_cols <- c("ID", "NORMALIZED_ELECTABILITY1", "NORMALIZED_ELECTABILITY2", 
+             "NORMALIZED_ELECTABILITY3")
+df <- df84cm[, my_cols]
+colnames(df) <- c("ID", my_candidate)
+
+df <- df %>%
+  pivot_longer(names_to = "Candidate", 
+               values_to = "NORMALIZED_ELECTABILITY", 
+               cols = -ID)
+
+df_final = merge(df_final, df, by = c("ID", "Candidate"))
+
+# 4) Subset: df84cm_normalized_ideology
+
+my_cols <- c("ID", "NORMALIZED_IDEOLOGY1", "NORMALIZED_IDEOLOGY2", 
+             "NORMALIZED_IDEOLOGY3")
+df <- df84cm[, my_cols]
+colnames(df) <- c("ID", my_candidate)
+
+df <- df %>%
+  pivot_longer(names_to = "Candidate", 
+               values_to = "NORMALIZED_IDEOLOGY", 
+               cols = -ID)
+
+df_final = merge(df_final, df, by = c("ID", "Candidate"))
+
+
+# 5) Subset: df84cm_traits
+
+my_cols <- c("ID", "TRAITS1", "TRAITS2", "TRAITS3")
+df <- df84cm[, my_cols]
+colnames(df) <- c("ID", my_candidate)
+
+df <- df %>%
+  pivot_longer(names_to = "Candidate", 
+               values_to = "TRAITS", 
+               cols = -ID)
+
+df_final = merge(df_final, df, by = c("ID", "Candidate"))
+
+```
+
+
+```{r}
+
+# Create new columns using candidate names, assign 0 to all
+df_final[, sort(my_candidate)] <- 0
+
+# Get index when intersection column name/value matches
+my_index <- cbind(seq_len(nrow(df_final)), 
+                  match(df_final$Candidate, names(df_final)[-1]))
+
+# Assign 1 to my_index cells
+df_final[-1][my_index] <- 1
+
+```
+
+
+## Writing Cleaned Dataset
+
+```{r}
+
+df_final_1 <- df_final %>%
+  drop_na() 
+
+```
+
+
+```{r}
+
+df_final %>%
+  drop_na() %>%
+  write.dta("clean_data/df84cm_d.dta")
+
+```
+
+
+# Calculating Buckets
+
+```{r}
+
+df_final_2 <- df_final %>%
+  rowwise() %>%
+  mutate(SINCERE = (NORMALIZED_FT + TRAITS) / 2,
+         STRATEGIC = (NORMALIZED_VIABILITY + NORMALIZED_ELECTABILITY) / 2) %>%
+  select(ID, Candidate, VoteCandidate, SINCERE, STRATEGIC) %>%
+  group_by(ID) %>%
+  mutate(SINCERE_MAX1 = max(SINCERE),
+         STRATEGIC_MAX1 = max(STRATEGIC)) %>%
+  mutate(SINCERE_MAX2 = ifelse(SINCERE == SINCERE_MAX1, 1, 0),
+         STRATEGIC_MAX2 = ifelse(STRATEGIC == STRATEGIC_MAX1, 1, 0)) %>%
+  filter(VoteCandidate == 1) %>%
+  drop_na()
+
+```
+
+
+```{r}
+
+df_final_2 %>%
+  group_by(Candidate, SINCERE_MAX2, STRATEGIC_MAX2) %>%
+  count() %>%
+  group_by(Candidate) %>%
+  mutate(percent = n / sum(n),
+         df = "df84cm_d") %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure3/df84cm_d_counts.csv")
+
+df_final_2 %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2) %>%
+  count() %>%
+  group_by() %>%
+  mutate(percent = n / sum(n),
+         df = "df84cm_d") %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure3/df84cm_d_counts_aggregate.csv")
+
+```
+
+
+## Make Graphs
+
+```{r}
+
+df_final %>%
+  ggplot(aes(x = NORMALIZED_ELECTABILITY)) +
+    geom_density() +
+    facet_wrap(~ Candidate) +
+    theme_bw() + 
+    labs(
+      title = "Candidate Electability",
+      x = "Normalized Electability",
+      y = "Density"
+    ) +
+  ggsave("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure2/anes84_cm_d_electability.bmp", width = 7.5, height = 4.5)
+
+df_final %>%
+  ggplot(aes(x = NORMALIZED_VIABILITY)) +
+    geom_density() +
+    facet_wrap(~ Candidate) +
+    theme_bw() + 
+    labs(
+      title = "Candidate Viability",
+      x = "Normalized Viability",
+      y = "Density"
+    ) +
+  ggsave("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure2/nanes84_cm_d_viability.bmp", width = 7.5, height = 4.5)
+
+```
+
+## Demograhic Tables
+
+```{r}
+
+# Race
+
+df_final_2 %>%
+  inner_join(anes84_cm, by = c("ID" = "VCM0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VCM1127) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VCM1127) %>%
+  mutate(percent = n / sum(n),
+         df = "anes84_cm_d",
+         race = case_when(
+           VCM1127 == "1" ~ "WHITE",
+           VCM1127 == "2" ~ "BLACK",
+           VCM1127 == "3" ~ "NATIVE",
+           VCM1127 == "4" ~ "ASIAN",
+           VCM1127 == "7" ~ "OTHER")) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/race/anes84_cm_d_race.csv")
+
+# Education
+
+df_final_2 %>%
+  inner_join(anes84_cm, by = c("ID" = "VCM0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VCM1021) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VCM1021) %>%
+  mutate(percent = n / sum(n),
+         df = "anes84_cm_d",
+         education = case_when(
+           VCM1021 == "1" ~ "GRADE8-",
+           VCM1021 == "2" ~ "SOMEHS",
+           VCM1021 == "3" ~ "HS",
+           VCM1021 == "4" ~ "SOMECOLLEGE",
+           VCM1021 == "5" ~ "SOMECOLLEGE",
+           VCM1021 == "6" ~ "BACHELORS")) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/education/anes84_cm_d_education.csv")
+
+# Age
+
+df_final_2 %>%
+  inner_join(anes84_cm, by = c("ID" = "VCM0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VCM1016) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VCM1016) %>%
+  mutate(percent = n / sum(n),
+         df = "anes84_cm_d",
+         age = VCM1016) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/age/anes84_cm_d_age.csv")
+
+# Ideology
+
+df_final_2 %>%
+  inner_join(anes84_cm, by = c("ID" = "VCM0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VCM0610) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VCM0610) %>%
+  mutate(percent = n / sum(n),
+         df = "anes84_cm_d",
+         ideology = case_when(
+           VCM0610 == "1" ~ "SOMEWHATLIBERAL",
+           VCM0610 == "2" ~ "MODERATE",
+           VCM0610 == "3" ~ "SOMEWHATCONSERVATIVE")) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/ideology/anes84_cm_d_ideology.csv")
+
+# Party ID strength
+
+df_final_2 %>%
+  inner_join(anes84_cm, by = c("ID" = "VCM0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VCM0734) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VCM0734) %>%
+  mutate(percent = n / sum(n),
+         df = "anes84_cm_d",
+         party_strength = case_when(
+           VCM0734 == "0" ~ "STRONG",
+           VCM0734 == "1" ~ "NOTVERYSTRONG",
+           VCM0734 == "2" ~ "NOTVERYSTRONG",
+           # VCM0734 == "3" ~ "NOTVERYSTRONG",
+           VCM0734 == "4" ~ "NOTVERYSTRONG",
+           VCM0734 == "5" ~ "NOTVERYSTRONG",
+           VCM0734 == "6" ~ "STRONG",
+           VCM0734 == "7" ~ "OTHER",
+           VCM0734 == "8" ~ "OTHER")) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/party_strength/anes84_cm_d_party_strength.csv")
+
+# Political interest
+
+df_final_2 %>%
+  inner_join(anes84_cm, by = c("ID" = "VCM0001")) %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, VCM0147) %>%
+  count() %>%
+  mutate(sincere_strategic = case_when(
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
+    (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1) ~ 3,
+    (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
+    )) %>%
+  group_by(VCM0147) %>%
+  mutate(percent = n / sum(n),
+         df = "anes84_cm_d",
+         political_interest = case_when(
+           VCM0147 == "1" ~ "VERYCLOSELY",
+           VCM0147 == "2" ~ "SOMEWHATCLOSELY",
+           VCM0147 == "3" ~ "NOTTOOCLOSELY")) %>%
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/political_interest/anes84_cm_d_political_interest.csv")
+
+```
+
+
+```{r include=FALSE}
+
+rm(list = ls())
+
+```
+

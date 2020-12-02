@@ -1,0 +1,52 @@
+---
+title: "figure10_political_interest"
+author: "Ryan Zhang"
+date: "11/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+```
+
+
+```{r}
+
+naes00_national_d <- read_csv('naes00_national_d_political_interest.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, political_interest)
+naes00_national_r <- read_csv('naes00_national_r_political_interest.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, political_interest)
+naes04_national <- read_csv('naes04_national_political_interest.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, political_interest)
+naes08_phone_d <- read_csv('naes08_phone_d_political_interest.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, political_interest)
+naes08_phone_r <- read_csv('naes08_phone_r_political_interest.csv') %>%
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, political_interest)
+
+allFrame <- data.frame(rbind(naes00_national_d, naes00_national_r,
+                             naes04_national, naes08_phone_d, naes08_phone_r))
+
+# Instrumental voting
+
+allFrame2 <- allFrame %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, political_interest) %>%
+  summarize(count = sum(n)) %>%
+  group_by(political_interest) %>%
+  mutate(percent = count / sum(count)) %>%
+  select(-count) %>%
+  filter(SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1)
+
+# Expressive voting
+
+allFrame2 <- allFrame %>%
+  group_by(SINCERE_MAX2, STRATEGIC_MAX2, political_interest) %>%
+  summarize(count = sum(n)) %>%
+  group_by(political_interest) %>%
+  mutate(percent = count / sum(count)) %>%
+  select(-count) %>%
+  filter(SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0)
+
+```
+

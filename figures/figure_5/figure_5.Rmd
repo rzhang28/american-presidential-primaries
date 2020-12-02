@@ -1,0 +1,124 @@
+---
+title: "regressions"
+author: "Ryan Zhang"
+date: "10/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+library(ngramr)
+library(ggplot2)
+library(splines)
+library(tidyverse)
+
+```
+
+
+## Current
+
+```{r}
+
+mydata <- read_csv(file = 'combined_data.csv',
+                         col_type = cols(
+                           year = col_double(),
+                           value = col_double(),
+                           word = col_character())) %>%
+  select(year, value, word) %>%
+  filter(year >= 1900)
+
+mydata %>%
+  ggplot(aes(x = year, y = value)) + 
+    geom_line(aes(color = word)) +
+    theme_bw() + 
+    scale_color_discrete(name = "Word", labels = c("Electability", "Electable")) + 
+    labs(
+      title = "Google Ngram Viewer",
+      subtitle = "American English (1900-2019)",
+      x = "Year",
+      y = "Relative Frequency",
+      caption = "Note: search words are case insensitive."
+    ) + 
+    ggsave("combined_data.bmp", width = 7.5, height = 4.5)
+
+
+```
+
+
+## Old
+
+```{r}
+
+data <- as.data.frame(matrix(ncol = 1, nrow = 109))
+
+data$V1 <- seq(from = 1900, to = 2008)
+
+names(data)[names(data) == "V1"] <- "Year"
+
+search_terms <- c("electability", "electable")
+
+# Create a loop
+for(i in 1:length(search_terms)) {
+
+  # Get each search term and store those in objects
+  term <- search_terms[i]
+
+  # Search for the term in the English 2012 corpus, starting from the year 1900 to 2008
+  # Then house the output in a dataframe
+  temp <- ngram(term, corpus = "eng_2012", year_start = 1900, smoothing = 0, 
+              count = T, case_ins = FALSE)
+
+  # Merge NYT data with dataframe created step 1, matching by years
+  data <- merge(data, temp[, c("Year", "Count")], by = "Year", all.x = TRUE)
+
+  # Reaname column by search term
+  colname <- paste(term, sep = "")
+
+  # Rename added column with ID
+  names(data)[names(data) == "Count"] <- colname
+
+  # Remove temporary dataframe
+  rm(temp)
+}
+
+# Rename the year variable from "term" to "year"
+names(data)[names(data) == "term"] <- "year"
+
+```
+
+
+```{r}
+
+data_long <- reshape(data, 
+  varying = c("electability", "electable"), 
+  v.names = "count",
+  timevar = "search_term", 
+  times = c("electability", "electable"), 
+  direction = "long")
+
+```
+
+
+```{r}
+
+# Fit model
+lm1 <- lm(formula = count ~ bs(Year, df = NULL, knots = c(1980), degree = 1), 
+          data = data_long)
+
+# Create a data frame to hold prediction
+newdat <- data.frame(Year = seq(from = min(data_long$Year), 
+                                to = max(data_long$Year), by = 0.01))
+
+# Predict
+newdat$count <- predict(lm1, newdata = newdat)
+
+# Plot the previous plot with a regression line
+ggplot(data_long, aes(x = Year, y = count, group = search_term)) + 
+  geom_line(aes(colour = search_term)) + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_smooth(method = "loess", formula = "y ~ x", size = 0.4) 
+
+# layer(geom = "line", data = newdat, color = "red")
+
+```
+
