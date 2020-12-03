@@ -16,31 +16,31 @@ library(tidyverse)
 library(clogitboost)
 library(dplyr)
 
-df08national_d <- read.dta("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_d.dta")
-df08national_r <- read.dta("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_r.dta")
-df04national_d <- read.dta("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df04_national_d.dta")
-df00national_d <- read.dta("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_d.dta")
-df00national_r <- read.dta("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_r.dta")
-df88st_d <- read.dta("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_d.dta")
-df88st_r <- read.dta("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_r.dta")
-df84national_d <- read.dta("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df84cm_d.dta")
+df08national_d <- read.dta("clean_data/df08phone_d.dta")
+df08national_r <- read.dta("clean_data/df08phone_r.dta")
+df04national_d <- read.dta("clean_data/df04_national_d.dta")
+df00national_d <- read.dta("clean_data/df00_national_d.dta")
+df00national_r <- read.dta("clean_data/df00_national_r.dta")
+df88st_d <- read.dta("clean_data/df88st_d.dta")
+df88st_r <- read.dta("clean_data/df88st_r.dta")
+df84national_d <- read.dta("clean_data/df84cm_d.dta")
 
-df08phone_d_counts_aggregate <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_d_counts_aggregate.csv")
-df08phone_d_counts <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_d_counts.csv")
-df08phone_r_counts_aggregate <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_r_counts_aggregate.csv")
-df08phone_r_counts <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_r_counts.csv")
-df04_national_d_counts_aggregate <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df04_national_d_counts_aggregate.csv")
-df04_national_d_counts <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df04_national_d_counts.csv")
-df00_national_d_counts_aggregate <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_d_counts_aggregate.csv")
-df00_national_d_counts <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_d_counts.csv")
-df00_national_r_counts_aggregate <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_r_counts_aggregate.csv")
-df00_national_r_counts <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_r_counts.csv")
-df88st_d_counts_aggregate <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_d_counts_aggregate.csv")
-df88st_d_counts <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_d_counts.csv")
-df88st_r_counts_aggregate <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_r_counts_aggregate.csv")
-df88st_r_counts <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_r_counts.csv")
-df84cm_d_counts_aggregate <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df84cm_d_counts_aggregate.csv")
-df84cm_d_counts <- read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df84cm_d_counts.csv")
+df08phone_d_counts_aggregate <- read.csv("clean_data/df08phone_d_counts_aggregate.csv")
+df08phone_d_counts <- read.csv("clean_data/df08phone_d_counts.csv")
+df08phone_r_counts_aggregate <- read.csv("clean_data/df08phone_r_counts_aggregate.csv")
+df08phone_r_counts <- read.csv("clean_data/df08phone_r_counts.csv")
+df04_national_d_counts_aggregate <- read.csv("clean_data/df04_national_d_counts_aggregate.csv")
+df04_national_d_counts <- read.csv("clean_data/df04_national_d_counts.csv")
+df00_national_d_counts_aggregate <- read.csv("clean_data/df00_national_d_counts_aggregate.csv")
+df00_national_d_counts <- read.csv("clean_data/df00_national_d_counts.csv")
+df00_national_r_counts_aggregate <- read.csv("clean_data/df00_national_r_counts_aggregate.csv")
+df00_national_r_counts <- read.csv("clean_data/df00_national_r_counts.csv")
+df88st_d_counts_aggregate <- read.csv("clean_data/df88st_d_counts_aggregate.csv")
+df88st_d_counts <- read.csv("clean_data/df88st_d_counts.csv")
+df88st_r_counts_aggregate <- read.csv("clean_data/df88st_r_counts_aggregate.csv")
+df88st_r_counts <- read.csv("clean_data/df88st_r_counts.csv")
+df84cm_d_counts_aggregate <- read.csv("clean_data/df84cm_d_counts_aggregate.csv")
+df84cm_d_counts <- read.csv("clean_data/df84cm_d_counts.csv")
 
 # Define UI for application that draws a histogram
 ui <- navbarPage(
@@ -478,21 +478,21 @@ tabPanel("Typology of Voters",
 server <- function(input, output) {
     
   output$figure5 <- renderImage({
-    figure5 <- file.path("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/figures/figure_5/figure_5.bmp")
+    figure5 <- file.path("figures/figure_5/figure_5.bmp")
     list(src = figure5, width = 650, length = 1450)
   },
   deleteFile = FALSE
   )
   
   output$figure6 <- renderImage({
-    figure6 <- file.path("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/figures/figure_6/figure_6.bmp")
+    figure6 <- file.path("figures/figure_6/figure_6.bmp")
     list(src = figure6, width = 600, length = 1400)
   },
   deleteFile = FALSE
   )
   
   output$figure8 <- renderImage({
-    figure8 <- file.path("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/figures/figure_8/figure_8.bmp")
+    figure8 <- file.path("figures/figure_8/figure_8.bmp")
     list(src = figure8, width = 650, length = 1450)
   },
   deleteFile = FALSE
