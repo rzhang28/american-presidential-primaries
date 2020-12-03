@@ -1,0 +1,79 @@
+---
+title: "gather_typology"
+author: "Ryan Zhang"
+date: "12/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+df08phone_d_counts_aggregate <-
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_d_counts_aggregate.csv")
+df08phone_d_counts <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_d_counts.csv")
+df08phone_r_counts_aggregate <-
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_r_counts_aggregate.csv")
+df08phone_r_counts <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_r_counts.csv")
+df04_national_d_counts_aggregate <-
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df04_national_d_counts_aggregate.csv")
+df04_national_d_counts <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df04_national_d_counts.csv")
+df00_national_d_counts_aggregate <-
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_d_counts_aggregate.csv")
+df00_national_d_counts <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_d_counts.csv")
+df00_national_r_counts_aggregate <-
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_r_counts_aggregate.csv")
+df00_national_r_counts <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_r_counts.csv")
+df88st_d_counts_aggregate <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_d_counts_aggregate.csv")
+df88st_d_counts <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_d_counts.csv")
+df88st_r_counts_aggregate <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_r_counts_aggregate.csv")
+df88st_r_counts <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_r_counts.csv")
+df84cm_d_counts_aggregate <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df84cm_d_counts_aggregate.csv")
+df84cm_d_counts <- 
+  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df84cm_d_counts.csv")
+```
+
+
+```{r}
+clean_aggregate <- function(x) {
+  string = deparse(substitute(x))
+  x %>%
+    mutate(Type = case_when(
+      SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0 ~ "Irrational",
+      SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1 ~ "Instrumental",
+      SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0 ~ "Expressive",
+      SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1 ~ "Ideal"),
+      Percent = 100 * percent) %>%
+    select(-c(X, n, percent, SINCERE_MAX2, STRATEGIC_MAX2)) %>%
+    write.csv(., paste(string, ".csv", sep = ""))
+}
+
+clean_aggregate(df08phone_d_counts_aggregate)
+clean_aggregate(df08phone_d_counts)
+clean_aggregate(df08phone_r_counts_aggregate)
+clean_aggregate(df08phone_r_counts)
+clean_aggregate(df04_national_d_counts_aggregate)
+clean_aggregate(df04_national_d_counts)
+clean_aggregate(df00_national_d_counts_aggregate)
+clean_aggregate(df00_national_d_counts)
+clean_aggregate(df00_national_r_counts_aggregate)
+clean_aggregate(df00_national_r_counts)
+clean_aggregate(df88st_d_counts_aggregate)
+clean_aggregate(df88st_d_counts)
+clean_aggregate(df88st_r_counts_aggregate)
+clean_aggregate(df88st_r_counts)
+clean_aggregate(df84cm_d_counts_aggregate)
+clean_aggregate(df84cm_d_counts)
+```
+
