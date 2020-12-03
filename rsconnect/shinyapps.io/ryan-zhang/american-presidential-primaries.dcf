@@ -1,0 +1,12 @@
+name: american-presidential-primaries
+title: american-presidential-primaries
+username:
+account: ryan-zhang
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3342682
+bundleId: 3936300
+url: https://ryan-zhang.shinyapps.io/american-presidential-primaries/
+when: 1606967004.55371
+asMultiple: FALSE
+asStatic: FALSE

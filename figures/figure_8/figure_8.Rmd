@@ -15,7 +15,7 @@ library(mdthemes)
 
 ```{r}
 
-mydata <- read_csv('/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure8/polling_frequency.csv',
+mydata <- read_csv('polling_frequency.csv',
                    col_type = cols(year = col_double(),
                                    polls = col_double())) %>%
   drop_na()
