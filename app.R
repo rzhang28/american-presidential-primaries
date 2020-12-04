@@ -7,6 +7,8 @@
 #    http://shiny.rstudio.com/
 #
 
+# Load relevant libraries.
+
 library(shiny)
 library(foreign)
 library(tidyverse)
@@ -15,6 +17,8 @@ library(survival)
 library(tidyverse)
 library(clogitboost)
 library(dplyr)
+
+# Read in cleaned datasets.
 
 df08national_d <- read.dta("gather/clean_data/df08phone_d.dta")
 df08national_r <- read.dta("gather/clean_data/df08phone_r.dta")
@@ -25,24 +29,39 @@ df88st_d <- read.dta("gather/clean_data/df88st_d.dta")
 df88st_r <- read.dta("gather/clean_data/df88st_r.dta")
 df84national_d <- read.dta("gather/clean_data/df84cm_d.dta")
 
-df08phone_d_counts_aggregate <- read.csv("gather/clean_data/df08phone_d_counts_aggregate.csv")
-df08phone_d_counts <- read.csv("gather/clean_data/df08phone_d_counts.csv")
-df08phone_r_counts_aggregate <- read.csv("gather/clean_data/df08phone_r_counts_aggregate.csv")
+# Read in cleaned 4-part typology counts.
+
+df08phone_d_counts_aggregate <- 
+  read.csv("gather/clean_data/df08phone_d_counts_aggregate.csv")
+df08phone_d_counts <- 
+  read.csv("gather/clean_data/df08phone_d_counts.csv")
+df08phone_r_counts_aggregate <- 
+  read.csv("gather/clean_data/df08phone_r_counts_aggregate.csv")
 df08phone_r_counts <- read.csv("gather/clean_data/df08phone_r_counts.csv")
-df04_national_d_counts_aggregate <- read.csv("gather/clean_data/df04_national_d_counts_aggregate.csv")
-df04_national_d_counts <- read.csv("gather/clean_data/df04_national_d_counts.csv")
-df00_national_d_counts_aggregate <- read.csv("gather/clean_data/df00_national_d_counts_aggregate.csv")
-df00_national_d_counts <- read.csv("gather/clean_data/df00_national_d_counts.csv")
-df00_national_r_counts_aggregate <- read.csv("gather/clean_data/df00_national_r_counts_aggregate.csv")
-df00_national_r_counts <- read.csv("gather/clean_data/df00_national_r_counts.csv")
-df88st_d_counts_aggregate <- read.csv("gather/clean_data/df88st_d_counts_aggregate.csv")
+df04_national_d_counts_aggregate <- 
+  read.csv("gather/clean_data/df04_national_d_counts_aggregate.csv")
+df04_national_d_counts <- 
+  read.csv("gather/clean_data/df04_national_d_counts.csv")
+df00_national_d_counts_aggregate <- 
+  read.csv("gather/clean_data/df00_national_d_counts_aggregate.csv")
+df00_national_d_counts <- 
+  read.csv("gather/clean_data/df00_national_d_counts.csv")
+df00_national_r_counts_aggregate <- 
+  read.csv("gather/clean_data/df00_national_r_counts_aggregate.csv")
+df00_national_r_counts <- 
+  read.csv("gather/clean_data/df00_national_r_counts.csv")
+df88st_d_counts_aggregate <- 
+  read.csv("gather/clean_data/df88st_d_counts_aggregate.csv")
 df88st_d_counts <- read.csv("gather/clean_data/df88st_d_counts.csv")
-df88st_r_counts_aggregate <- read.csv("gather/clean_data/df88st_r_counts_aggregate.csv")
+df88st_r_counts_aggregate <- 
+  read.csv("gather/clean_data/df88st_r_counts_aggregate.csv")
 df88st_r_counts <- read.csv("gather/clean_data/df88st_r_counts.csv")
-df84cm_d_counts_aggregate <- read.csv("gather/clean_data/df84cm_d_counts_aggregate.csv")
+df84cm_d_counts_aggregate <- 
+  read.csv("gather/clean_data/df84cm_d_counts_aggregate.csv")
 df84cm_d_counts <- read.csv("gather/clean_data/df84cm_d_counts.csv")
 
-# Define UI for application that draws a histogram
+# Define UI for application that draws a histogram.
+
 ui <- navbarPage(
   theme = shinytheme("flatly"),
   "American Presidential Primaries",
@@ -59,52 +78,74 @@ ui <- navbarPage(
              Trump."),
              p("According to polls, concerns about candidate electability loomed 
              among a majority of Democratic primary voters. A national survey of
-             likely Democratic primary voters by The Economist asked respondents whether 
-             it was more important for the Democratic party to select a nominee 
-             who “agrees with your position on most issues” or “can win the general 
-             election in November.” 65 percent of respondents prioritized 
-             electability, compared to only 35 percent who prioritized policy positions.
-             Similarly, in one of the largest exit polls conducted in the race, 
-             Edison Media Research found that 33 percent of Democratic primary voters 
-             in New Hampshire preferred a nominee who agreed with them on major issues, 
+             likely Democratic primary voters by The Economist asked respondents 
+             whether it was more important for the Democratic party to select a
+             nominee who “agrees with your position on most issues” or “can win 
+             the general election in November.” 65 percent of respondents 
+             prioritized electability, compared to only 35 percent who 
+             prioritized policy positions. Similarly, in one of the largest 
+             exit polls conducted in the race, Edison Media Research found that 
+             33 percent of Democratic primary voters in New Hampshire preferred 
+             a nominee who agreed with them on major issues, 
              while 63 percent preferred a nominee who could defeat Trump."),
              
              # Generate a 2x2 column/row layout.
              
              fluidPage(
                  fluidRow(style = 'padding:30px;',
+                          
+                          # Plot graph displaying mentions of electability of
+                          # time, according to Google's N-gram Viewer.
+                          
                           column(7, plotOutput("figure5")),
                           column(5,
-                                 h3("Mentions of electability have increased over time."),
+                                 h3("Mentions of electability have increased
+                                 over time."),
                                  p("Electability is not a novel phenomenon. At
                                  first, one might believe that voting based
-                                 on electability is a unique response to Trump. However, 
-                                 electability’s presence steadily risen in our national political discourse. 
+                                 on electability is a unique response to Trump. 
+                                 However, electability’s presence steadily 
+                                 risen in our national political discourse. 
                                  Google's N-gram Viewer reveals
-                                 the rising usage of “electability” and “electable” in American English. 
+                                 the rising usage of “electability” and 
+                                 “electable” in American English. 
                                  Strikingly, mentions of these two
                                  terms were extremely until the 1970s, 
-                                 after which mentions rose from significantly, with particularly
-                                 steep increases during presidential election years."))),
+                                 after which mentions rose from significantly, 
+                                 with particularly steep increases during 
+                                   presidential election years."))),
                  fluidRow(column(5, 
-                                 h3("News coverage has increasingly covered electability."),
+                                 h3("News coverage has increasingly covered 
+                                 electability."),
                                  p("Our findings from Google's N-gram Viewer are 
-                                 confirmed by Nexis-Uni’s database of newspaper articles.
-                                 Mentions of “electability” and “electable” in newspapers have steadily increased since 
-                                 the 1980s, thereby suggesting that the news media is increasingly
-                                 focused on the “horse race” rather than issue positions.")),
+                                 confirmed by Nexis-Uni’s database of newspaper
+                                 articles. Mentions of “electability” and 
+                                 “electable” in newspapers have steadily 
+                                 increased since the 1980s, thereby suggesting 
+                                 that the news media is increasingly focused on 
+                                 the “horse race” rather than issue 
+                                 positions.")),
+                          
+                          # Plot graph displaying rising mentions of
+                          # electabiltiy in newspapers, according to Nexis-Uni.
+                          
                           column(7,
                                  plotOutput("figure6"))),
                  fluidRow(style = 'padding:30px;',
+                          
+                          # Plot graph displaying rising frequency of polls over
+                          # time.
+                          
                           column(7, plotOutput("figure8")),
                           column(5,
-                                 h3("Polls have made it easier than ever to talk about electability."),
+                                 h3("Polls have made it easier than ever to talk
+                                 about electability."),
                                  p("The past few decades have witnessed a 
                                  dramatic increase in the number of polls 
-                                 being conducted during presidential election cycles, 
-                                 from 17 polls in 1952 to 308 polls in 2016.
-                                 The rise of polls has subsequently affected 
-                                 the tone of political media coverage. 
+                                 being conducted during presidential election 
+                                 cycles, from 17 polls in 1952 to 308 polls in 
+                                 2016. The rise of polls has subsequently 
+                                 affected the tone of political media coverage. 
                                  Polls convey critical information about the 
                                  competitivity of each candidate, but they 
                                  often do not reveal substance about candidate 
@@ -117,7 +158,8 @@ ui <- navbarPage(
                  tags$ol(
                    tags$li(
                      p("How heavily dostrategic considerations weigh vis-a-vis 
-                     sincere considerations when primary voters cast their ballots?")),
+                     sincere considerations when primary voters cast their 
+                     ballots?")),
                    tags$li(
                      p("In any given election, what percentage of primary voters 
                      vote strategically?"))),
@@ -125,7 +167,8 @@ ui <- navbarPage(
                  nominating contests that span 30 years. Political scientist 
                  James Ceaser once declared, “No systematic
                  theory about primary voting is likely to develop for some time 
-                 because each campaign is so different.” I attempt to meet Ceaser’s challenge."))),
+                 because each campaign is so different.” I attempt to meet 
+                 Ceaser’s challenge."))),
                    
 ############## PAGE 2 ##############
 
@@ -134,66 +177,100 @@ tabPanel("Sincere Considerations",
            h2("The Feeling Thermometer"),
            p("The variables in a voter's decision-making calculus can be boiled
            down to two categories: sincere considerations and strategic 
-           considerations. Two variables comprise a voter's sincere considerations, the 
-           first of which is favorability."),
-           p("The National American Election Studies (NAES) and Annenberg National
-           Election Studies (ANES) both extensively use feeling thermometers, which 
-           ask respondents to rate candidates on a scale that ranges from 0–100, 
-           where 0 is very unfavorable and 100 is very favorable."),
-           p("One difficulty in using feeling thermometers is that respondents provide 
-           ranges of ratings that vary considerably. For example, one respondent 
-           might rate his or her favorite and least favorite candidate 90 and 10, 
-           respectively, while another might rate his or her favorite and least favorite
-           candidate 60 and 40, respectively. However, the utility of feeling 
-           thermometers lies not in raw scores, but in the relative distance of values
-           recorded between the candidates for each respondent. Thus, to make responses comparable between 
-           respondents, we normalized eachrating according to the following formula, 
-           which is derived from similar conventions in the political science literature:"),
+           considerations. Two variables comprise a voter's sincere 
+           considerations, the first of which is favorability."),
+           p("The National American Election Studies (NAES) and Annenberg 
+           National Election Studies (ANES) both extensively use feeling 
+           thermometers, which ask respondents to rate candidates on a scale 
+           that ranges from 0–100, where 0 is very unfavorable and 100 is very 
+           favorable."),
+           p("One difficulty in using feeling thermometers is that respondents 
+           provide ranges of ratings that vary considerably. For example, one 
+           respondent might rate his or her favorite and least favorite 
+           candidate 90 and 10, respectively, while another might rate his or 
+           her favorite and least favorite candidate 60 and 40, respectively. 
+           However, the utility of feeling thermometers lies not in raw scores, 
+           but in the relative distance of values recorded between the
+           candidates for each respondent. Thus, to make responses comparable 
+           between respondents, we normalized eachrating according to the 
+           following formula, which is derived from similar conventions in the 
+           political science literature:"),
+           
+           # Use LaTeX to display mathematical formula.
+           
            p('$$u_j = \\frac{U_j - U_n}{U_1 - U_n}$$'),
            p("In this formula, ui is the “normalized” feeling thermometer 
            value, Uj is the original feeling thermometer value, U1 is the 
-           highest thermometer rating used by the respondent for any candidate, and Un is the lowest. 
-           After normalizing, each respondent’s highest-rated candidate is always given 
-           a score of 1, the lowest 0, and other candidates some value in-between. For
-           example, if a respondent rates three candidates 80, 60, 40, and 30, the normalized
-           scores would be 1, 0.60, 0.20, and 0, respectively. The expectation is that as 
-           these values increase for each candidate so will the probabilities of a given 
-           respondent selecting that candidate over another."),
+           highest thermometer rating used by the respondent for any candidate, 
+           and Un is the lowest. After normalizing, each respondent’s 
+           highest-rated candidate is always given a score of 1, the lowest 0, 
+           and other candidates some value in-between. For example, if a 
+           respondent rates three candidates 80, 60, 40, and 30, the normalized
+           scores would be 1, 0.60, 0.20, and 0, respectively. The expectation 
+           is that as these values increase for each candidate so will the 
+           probabilities of a given respondent selecting that candidate over
+           another."),
            titlePanel(""),
            sidebarLayout(
              sidebarPanel(
+               
+               # Select electoral contest to display. 
+               
                selectInput(
                  "plot_type1",
                  "Election Year (Party)",
-                 c("2008 (D)" = "a", "2008 (R)" = "b", "2004 (D)" = "c", "2000 (D)" = "d", "2000 (R)" = "e", "1988 (D)" = "f", "1988 (R)" = "g", "1984 (D)" = "h"))),
+                 c("2008 (D)" = "a", "2008 (R)" = "b", 
+                   "2004 (D)" = "c", "2000 (D)" = "d", 
+                   "2000 (R)" = "e", "1988 (D)" = "f", 
+                   "1988 (R)" = "g", "1984 (D)" = "h"))),
+           
+           # Display the favorability ratings of each candidate for the chosen
+           # year.
+             
            mainPanel(plotOutput("distPlot1"))),
            h2("Ideological Distance"),
-           p("The second constituent variable of sincere considerations is ideological distance. 
-           In both the ANES and NAES, respondents are asked to rank themselves, 
-           as well as each of the primary candidates, on an ideological scale, from 1 
-           (“most liberal”) to 5 (“most conservative”)."),
-           p("We are less concerned about the absolute values of each respondent’s 
-           rankings, but more interested in the distance between where respondents placed themselves 
-           on the ideological scale and where they placed each candidate. As such, we calculate 
-           ideological distance by taking the difference between each respondent’s ranking 
-           of themselves and of the candidate, squaring the difference (since otherwise 
-           positive and negative differences would cancel each other out), and scaling to 
-           1 to make later comparisons between coefficients in our model easier to interpret. 
+           p("The second constituent variable of sincere considerations is 
+           ideological distance. In both the ANES and NAES, respondents are 
+           asked to rank themselves, as well as each of the primary candidates, 
+           on an ideological scale, from 1 (“most liberal”) to 5 
+           (“most conservative”)."),
+           p("We are less concerned about the absolute values of each 
+           respondent’s rankings, but more interested in the distance between 
+           where respondents placed themselves on the ideological scale and
+           where they placed each candidate. As such, we calculate ideological
+           distance by taking the difference between each respondent’s ranking 
+           of themselves and of the candidate, squaring the difference 
+           (since otherwise positive and negative differences would cancel
+           each other out), and scaling to 1 to make later comparisons between 
+           coefficients in our model easier to interpret. 
            These calculations can be summarized by the following formula:"),
-           withMathJax(),
+
+           # Use LaTeX to display mathematical formula.
+           
            p('$$d_j = \\frac{(D_c - D_r)^2}{5}$$'),
            p("In this formula, dj is the normalized ideological distance, 
            Dc is the respondent’s ranking of a candidate’s ideology, and Dr 
-           is the respondent’s ranking of his or her own ideology. We expect that 
-           the farther away ideologically a voter is from a candidate, the less likely 
-           he or she is to vote for that candidate."),
+           is the respondent’s ranking of his or her own ideology. 
+           We expect that the farther away ideologically a voter is 
+           from a candidate, the less likely he or she is to vote for that 
+           candidate."),
            titlePanel(""),
            sidebarLayout(
              sidebarPanel(
+               
+               # Select electoral contest to display. 
+               
                selectInput(
                  "plot_type3",
                  "Election Year (Party)",
-                 c("2008 (D)" = "a", "2008 (R)" = "b", "2004 (D)" = "c", "2000 (D)" = "d", "2000 (R)" = "e", "1988 (D)" = "f", "1988 (R)" = "g", "1984 (D)" = "h"))),
+                 c("2008 (D)" = "a", "2008 (R)" = "b", 
+                   "2004 (D)" = "c", "2000 (D)" = "d", 
+                   "2000 (R)" = "e", "1988 (D)" = "f", 
+                   "1988 (R)" = "g", "1984 (D)" = "h"))),
+             
+             # Display the ideology ratings of each candidate for the chosen
+             # year.
+             
              mainPanel(plotOutput("distPlot3"))))),
 
 ############## PAGE 3 ##############
@@ -201,64 +278,97 @@ tabPanel("Sincere Considerations",
 tabPanel("Strategic Considerations",
          fluidPage(
            withMathJax(),
-           p("Equally important in a voter's decision-making calculus are strategic concerns.
-           Respondents in both the ANES and NAES are asked to assess the chances 
-           of each primary candidate winning the 
-           party’s nomination (viability) and the general election (electability)."),
-           p("Since we are interested in respondents’ relative rankings of candidates,
-           and since the responses for all candidates frequently summed to 
-           over 100 percent, we normalized responses to both the viability and
-           electability questions according to the below equation, where Pj is 
-           the raw score given by the respondent, n is the number of candidates 
-           that were rated, and pj is the normalized score for a given candidate:"),
+           p("Equally important in a voter's decision-making calculus are 
+           strategic concerns. Respondents in both the ANES and NAES are 
+           asked to assess the chances of each primary candidate winning the 
+           party’s nomination (viability) and the general election 
+           (electability)."),
+           p("Since we are interested in respondents’ relative rankings of 
+           candidates, and since the responses for all candidates 
+           frequently summed to over 100 percent, we normalized responses 
+           to both the viability and electability questions according to 
+           the below equation, where Pj is the raw score given by the 
+           respondent, n is the number of candidates that were rated, and 
+           pj is the normalized score for a given candidate:"),
+           
+           # Use LaTeX to display mathematical formula.
+           
            p('$$p_j = \\frac{P_j}{(P_1+ ... + P_n)}$$'),
            p("Using this formula, each respondent's responses sum to 1.
            For example, one respondent might
-           indicate that five candidates each have a 12 percent chance of winning their party's nomination 
-           and a sixth candidate has an 80 percent chance of winning. The
-           first five would get a normalized score of .08 and the sixth 
-           candidate a 0.60. To be clear, this does not suggest that the sixth 
-           candidate had a 60 percent chance of winning the election, but instead, 
-           the 0.60 represents the proper proportion of the 150 percentage points the 
+           indicate that five candidates each have a 12 percent chance of 
+           winning their party's nomination and a sixth candidate has an 80 
+           percent chance of winning. The first five would get a normalized 
+           score of .08 and the sixth candidate a 0.60. To be clear, this does 
+           not suggest that the sixth candidate had a 60 percent chance of 
+           winning the election, but instead, the 0.60 represents the proper 
+           proportion of the 150 percentage points the 
            respondent initially allocated out."),
            titlePanel("Viability"),
                  sidebarLayout(
                      sidebarPanel(
+                       
+                         # Select electoral contest to display. 
+                       
                          selectInput(
                              "plot_type2",
                              "Election Year (Party)",
-                             c("2008 (D)" = "a", "2008 (R)" = "b", "2004 (D)" = "c", "2000 (D)" = "d", "2000 (R)" = "e",  "1988 (D)" = "f", "1988 (R)" = "g", "1984 (D)" = "h"))),
+                             c("2008 (D)" = "a", "2008 (R)" = "b", 
+                               "2004 (D)" = "c", "2000 (D)" = "d", 
+                               "2000 (R)" = "e",  "1988 (D)" = "f", 
+                               "1988 (R)" = "g", "1984 (D)" = "h"))),
+                     
+                     # Display the viability ratings of each candidate for the
+                     # chosen year.
+                     
                      mainPanel(plotOutput("distPlot2"))),
                  
                  titlePanel("Electability"),
                  sidebarLayout(
                    sidebarPanel(
+                     
+                     # Select electoral contest to display. 
+                     
                      selectInput(
                        "plot_type4",
                        "Election Year (Party)",
-                       c("2008 (D)" = "a", "2008 (R)" = "b", "2004 (D)" = "c", "2000 (D)" = "d", "2000 (R)" = "e", "1988 (D)" = "f", "1988 (R)" = "g", "1984 (D)" = "h"))),
+                       c("2008 (D)" = "a", "2008 (R)" = "b", 
+                         "2004 (D)" = "c", "2000 (D)" = "d", 
+                         "2000 (R)" = "e", "1988 (D)" = "f", 
+                         "1988 (R)" = "g", "1984 (D)" = "h"))),
+                   
+                   # Display the electability ratings of each candidate for the
+                   # chosen year.
+                   
                    mainPanel(plotOutput("distPlot4"))))),
 
 ############## PAGE 4 ##############
 
     tabPanel("The Model",
              h2("Putting It Together"),
-             p("Having explored each of our four variables, we now put them together 
-             into a model that reveals their relative importance in voter decision-making.  
-             To summarize, our four variables of interest are:"
+             p("Having explored each of our four variables, we now put them 
+             together into a model that reveals their relative importance in 
+             voter decision-making. To summarize, our four variables of 
+             interest are:"
              ),
              tags$ul(
                  tags$li(
-                     tags$b("Favorability:"), "the extent to which a voter finds a particular candidate personally favorable, as measured by a feeling thermometer."
+                     tags$b("Favorability:"), "the extent to which a voter 
+                     finds a particular candidate personally favorable, 
+                     as measured by a feeling thermometer."
                  ),
                  tags$li(
-                     tags$b("Ideological Distance:"), "the absolute distance between a voter's ideology and that of a candidate."
+                     tags$b("Ideological Distance:"), "the absolute distance 
+                     between a voter's ideology and that of a candidate."
                  ),
                  tags$li(
-                     tags$b("Viability:"), "the chances that a voter believes a candidate has at winning his or her party's nomination."
+                     tags$b("Viability:"), "the chances that a voter believes 
+                     a candidate has at winning his or her party's nomination."
                  ),
                  tags$li(
-                     tags$b("Electability:"), "the chances that a voter believes a candidate has at winning the general election in November."
+                     tags$b("Electability:"), "the chances that a voter 
+                     believes a candidate has at winning the general election 
+                     in November."
                  )
              ),
              p("Our model of choice is conditional logistic regression, 
@@ -273,15 +383,19 @@ tabPanel("Strategic Considerations",
              choice alternatives), as well as variables that are individual 
              specific (characteristics of the individuals making the choices). 
              Economists frequently use 
-             conditional logistic models, but political scientists have only recently 
-             drawn on spatial modeling conditioned on characteristics 
-             of the choices, like conditional logistic modeling, to inform analyses
-             of multi-candidate elections."),
+             conditional logistic models, but political scientists have only 
+             recently drawn on spatial modeling conditioned on characteristics 
+             of the choices, like conditional logistic modeling, to inform 
+             analyses of multi-candidate elections."),
              p("In each regression, the candidate who went on to eventually 
              the party's nomination that year serves as the baseline."),
              sidebarLayout(
                  sidebarPanel(
                      h4("Choose the Model:"),
+                     
+                     # Select electoral contest to display the conditional
+                     # logistic regression output.
+                     
                      selectInput(
                        "varOI_d",
                        "Election Year (Party):",
@@ -299,8 +413,14 @@ tabPanel("Strategic Considerations",
                        selected = "df08national_d"
                      ),
                  ),
+                 
+                 # Output summary of regression output. 
+                 
                  mainPanel(
                      verbatimTextOutput(outputId = "RegSum"),
+                     
+                     # Use CSS styling to hide all error messages. 
+                     
                      tags$style(
                          type = "text/css",
                          ".shiny-output-error {display: none;}",
@@ -338,29 +458,43 @@ tabPanel("Typology of Voters",
          four-part typology for voter behavior:"),
          tags$ul(
            tags$li(
-             tags$b("Ideal Voter:"), "A voter who casts his or her ballot for the candidate that he or she ranked most sincere and most strategic."
+             tags$b("Ideal Voter:"), "A voter who casts his or her ballot for 
+             the candidate that he or she ranked most sincere and most 
+             strategic."
            ),
            tags$li(
-             tags$b("Expressive Voter:"), "A voter who casts his or her ballot for the candidate that he or she ranked most sincere but not most strategic."
+             tags$b("Expressive Voter:"), "A voter who casts his or her ballot 
+             for the candidate that he or she ranked most sincere but not most
+             strategic."
            ),
            tags$li(
-             tags$b("Instrumental Voter:"), "A voter who casts his or her ballot for the candidate that he or she ranked most strategic but not most sincere."
+             tags$b("Instrumental Voter:"), "A voter who casts his or her 
+             ballot for the candidate that he or she ranked most strategic 
+             but not most sincere."
            ),
            tags$li(
-             tags$b("Irrational Voter:"), "A voter who casts his or her ballot for the candidate that he or she ranked neither most sincere nor most strategic."
+             tags$b("Irrational Voter:"), "A voter who casts his or her ballot
+             for the candidate that he or she ranked neither most sincere
+             nor most strategic."
            )
          ),
-         p("As seen in the tables below, the majority of ANES and NAES respondents are ideal voters, 
-           followed by expressive voters and then instrumental voters. Overall, these findings
-           suggest that roughly 10 percent of primary voters in any given election cycle 
-           cast strategic votes. The three candidates who received the greatest 
-           percentages of expressive votes were Jesse Jackson, John Edwards, and John McCain,
-           while the three candiates who received the greatest percentages of instrumental 
-           votes were George W. Bush, Al Gore, and Walter Mondale."
+         p("As seen in the tables below, the majority of ANES and NAES 
+         respondents are ideal voters, followed by expressive voters 
+         and then instrumental voters. Overall, these findings suggest that 
+         roughly 10 percent of primary voters in any given election cycle 
+         cast strategic votes. The three candidates who received the greatest 
+         percentages of expressive votes were Jesse Jackson, John Edwards, 
+         and John McCain, while the three candiates who received the 
+         greatest percentages of instrumental 
+         votes were George W. Bush, Al Gore, and Walter Mondale."
          ),
          sidebarLayout(
+           
+           # Select electoral contest to display the results of the 4-part
+           # voting typology.
+           
            sidebarPanel(
-             h4("Construct the Model:"),
+             h4("Election Year (Party):"),
              selectInput(
                "tableYear1",
                "Year",
@@ -377,7 +511,11 @@ tabPanel("Typology of Voters",
                multiple = FALSE,
                selected = "df08national_d"
              ),
-             checkboxInput("toggleCandidate", label = "Disaggregate by Candidate", value = FALSE)
+             
+             # Choose whether or not to disaggregate results by candidate. 
+             
+             checkboxInput("toggleCandidate", 
+                           label = "Disaggregate by Candidate", value = FALSE)
            ),
            mainPanel(
              dataTableOutput("table1"),
@@ -397,8 +535,8 @@ tabPanel("Typology of Voters",
              issues and towards the “horse race.”"),
              p("Despite its prevalence, strategic voting is understudied 
                in the political science literature.",
-               a("Brady and Johnston (1987)",href =
-                   "https://d1wqtxts1xzle7.cloudfront.net/40269085/The_Study_of_Political_Campaigns20151122-786-133uwx1.pdf?1448220863=&response-content-disposition=inline%3B+filename%3DThe_study_of_political_campaigns.pdf&Expires=1606968470&Signature=ONYbGzKbhoxDbRMZfau-4eGLE1unYssPj-gUkRfqidhI-R~NEPLxegiPlWNwTSUZAaIIdSOIFJ34tq0G1-g3yGHIavL4ygWh76zz6jOFdaJZ6X7kKKdqEiYTxre7BHf4gQUDsJB~cytD1MKF32sNCLBxTYyHAR2WCLtui7Nr01W5tJ2p-kwqJIgL8-paQ90zJdPs-CQ25p~FM9pZ7MbNjy0hyZqcaxrQ-iL5f5MggTG0U-okkB8OwsqNzCoGcyO-REcdsuJquxp0zM7CkwqjR0b7RBRYBF3BtwjAPFHcu2duQEGlKAXziSTEI1O6XHkpqwHZWCtDrPDh5zueGWvX-g__&Key-Pair-Id=APKAJLOHF5GGSLRBV4ZA"), 
+               a("Brady and Johnston (1987)",
+                 href = "https://d1wqtxts1xzle7.cloudfront.net/40269085/The_Study_of_Political_Campaigns20151122-786-133uwx1.pdf?1448220863=&response-content-disposition=inline%3B+filename%3DThe_study_of_political_campaigns.pdf&Expires=1606968470&Signature=ONYbGzKbhoxDbRMZfau-4eGLE1unYssPj-gUkRfqidhI-R~NEPLxegiPlWNwTSUZAaIIdSOIFJ34tq0G1-g3yGHIavL4ygWh76zz6jOFdaJZ6X7kKKdqEiYTxre7BHf4gQUDsJB~cytD1MKF32sNCLBxTYyHAR2WCLtui7Nr01W5tJ2p-kwqJIgL8-paQ90zJdPs-CQ25p~FM9pZ7MbNjy0hyZqcaxrQ-iL5f5MggTG0U-okkB8OwsqNzCoGcyO-REcdsuJquxp0zM7CkwqjR0b7RBRYBF3BtwjAPFHcu2duQEGlKAXziSTEI1O6XHkpqwHZWCtDrPDh5zueGWvX-g__&Key-Pair-Id=APKAJLOHF5GGSLRBV4ZA"), 
                "studied electability during the 1984 Democratic primaries, but 
                their findings are limited by their binary models, which assume
                primaries to be two candidate affairs when, in reality, most 
@@ -416,39 +554,49 @@ tabPanel("Typology of Voters",
                evaluating the nature and magnitude of strategic considerations 
                in American presidential primaries."),
              p("My Github repository, which includes all files relevant to 
-             this project, can be reached ", a("here.", href = "https://github.com/rzhang28/american-presidential-primaries")), 
+             this project, can be reached ", 
+               a("here.", href = "https://github.com/rzhang28/american-presidential-primaries")), 
              h2("The Data"),
              p("My analysis is based on two landmark surveys: the",
                a("American National Election Studies (ANES),",href =
-                   "https://www.davidkane.info/files/gov_50_fall_2020.html/"), "and the",
+                 "https://www.davidkane.info/files/gov_50_fall_2020.html/"),
+                 "and the",
                a("National Annenberg Election Surveys (NAES),",href = 
                  "https://www.davidkane.info/files/gov_50_fall_2020.html/"),
              "both of which sample likely American voters. The ANES has been 
              conducted every four years since 1948, 
-             while the NAES was conducted three times in 2000, 2004, and 2008. Between these 
-             recurring surveys, I identified the iterations that contained the 
-             variables necessary to build our decision-making models: feeling thermometer
-             ratings of candidates, assessments of candidate viability and electability, 
-             and perceived ideological distance between candidates and respondents."),
-             p("In total, I analyzed eight presidential nominating contests spanning 
-             24 years, specifically the Democratic nominating contests of 1984, 
-             1988, 2000, 2004, and 2008, as well as the Republican nominating contests
-             of 1988, 2000, and 2008. Every effort was also made to use ANES data from 1980,
+             while the NAES was conducted three times in 2000, 2004, and 2008. 
+             Between these recurring surveys, I identified the iterations 
+             that contained the variables necessary to build our
+             decision-making models: feeling thermometer
+             ratings of candidates, assessments of candidate viability and 
+             electability, and perceived ideological distance between 
+             candidates and respondents."),
+             p("In total, I analyzed eight presidential nominating 
+             contests spanning 24 years, specifically the Democratic nominating
+             contests of 1984, 1988, 2000, 2004, and 2008, as well as the 
+             Republican nominating contests of 1988, 2000, and 2008. Every 
+             effort was also made to use ANES data from 1980,
              but those efforts proved ill-fated, as there were insufficient 
              valid cases to support proper analysis."),
              "My research also uses data from the following sources:",
              tags$ol(
                tags$li(
-                 a("Google's N-Gram", href = "https://data.worldbank.org"), "accessed using the",
-                 a("ngramr() package.", href = "https://cran.r-project.org/web/packages/ngramr/index.html")
+                 a("Google's N-Gram", href = "https://data.worldbank.org"), 
+                   "accessed using the",
+                 a("ngramr() package.", 
+                   href = "https://cran.r-project.org/web/packages/ngramr/index.html")
                ),
                tags$li(
-                 a("Nexis-Uni", href = "https://www.eiu.com/topic/democracy-index"), "accessed using the",
-                 a("LexisNexisTools() package.", href = "https://cran.r-project.org/web/packages/LexisNexisTools/index.html")
+                 a("Nexis-Uni", href = "https://www.eiu.com/topic/democracy-index"), 
+                   "accessed using the",
+                 a("LexisNexisTools() package.", 
+                   href = "https://cran.r-project.org/web/packages/LexisNexisTools/index.html")
                ),
                tags$li(
                  "American election and polling data accessed using the",
-                 a("politicaldata() package.", href = "https://cran.r-project.org/web/packages/politicaldata/")
+                 a("politicaldata() package.", 
+                   href = "https://cran.r-project.org/web/packages/politicaldata/")
                )
              ),
              h2("Acknowledgements"),
@@ -466,7 +614,8 @@ tabPanel("Typology of Voters",
                "a data science course taught in R. When I'm not click-clacking
                away in RStudio, you can catch me hanging out at the ",
              a("Institute of Politics,", href = "https://iop.harvard.edu/"), 
-               "writing for the ", a("Harvard College Law Review, ", href = "https://hulr.org/"),
+               "writing for the ", a("Harvard College Law Review, ", 
+                                     href = "https://hulr.org/"),
              "or exploring Boston with my friends!"),
              p("Thanks for stopping by! Feel free to say hello at ",
                a("ryanzhang@college.harvard.edu",
@@ -474,15 +623,22 @@ tabPanel("Typology of Voters",
                a("LinkedIn.",
                  href = "https://www.linkedin.com/in/r-zhang/"))))
 
-# Define server logic required to draw a histogram
+# Define server logic required to draw a histogram.
+
 server <- function(input, output) {
-    
+  
+  # Plot graph displaying mentions of electability of time, according to
+  # Google's N-gram Viewer.
+  
   output$figure5 <- renderImage({
     figure5 <- file.path("figures/figure_5/figure_5.bmp")
     list(src = figure5, width = 650, length = 1450)
   },
   deleteFile = FALSE
   )
+  
+  # Plot graph displaying rising mentions of electabiltiy in newspapers,
+  # according to Nexis-Uni.
   
   output$figure6 <- renderImage({
     figure6 <- file.path("figures/figure_6/figure_6.bmp")
@@ -491,12 +647,17 @@ server <- function(input, output) {
   deleteFile = FALSE
   )
   
+  # Plot graph displaying rising frequency of polls over time.
+  
   output$figure8 <- renderImage({
     figure8 <- file.path("figures/figure_8/figure_8.bmp")
     list(src = figure8, width = 650, length = 1450)
   },
   deleteFile = FALSE
   )
+  
+  # Render normalized feeling thermometer ratings for each candidate, based on
+  # the specific year that the user selects.
   
   output$distPlot1 <- renderPlot({
     if(input$plot_type1 == "a") {
@@ -597,6 +758,9 @@ server <- function(input, output) {
     }
   })
   
+  # Render normalized viability ratings for each candidate, based on the
+  # specific year that the user selects.
+  
   output$distPlot2 <- renderPlot({
     if(input$plot_type2 == "a") {
       ggplot(df08national_d, aes(x = NORMALIZED_VIABILITY, fill = Candidate)) +
@@ -695,6 +859,9 @@ server <- function(input, output) {
         ) 
     }
   })
+  
+  # Render normalized ideology ratings for each candidate, based on the
+  # specific year that the user selects.
   
   output$distPlot3 <- renderPlot({
     if(input$plot_type3 == "a") {
@@ -795,9 +962,13 @@ server <- function(input, output) {
     }
   })
   
+  # Render normalized electability ratings for each candidate, based on the
+  # specific year that the user selects.
+  
   output$distPlot4 <- renderPlot({
     if(input$plot_type4 == "a") {
-      ggplot(df08national_d, aes(x = NORMALIZED_ELECTABILITY, fill = Candidate)) +
+      ggplot(df08national_d, aes(x = NORMALIZED_ELECTABILITY, 
+                                 fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
         theme_minimal() +
@@ -809,7 +980,8 @@ server <- function(input, output) {
         )
     }
     else if(input$plot_type4 == "b") {
-      ggplot(df08national_r, aes(x = NORMALIZED_ELECTABILITY, fill = Candidate)) +
+      ggplot(df08national_r, aes(x = NORMALIZED_ELECTABILITY, 
+                                 fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
         theme_minimal() +
@@ -821,7 +993,8 @@ server <- function(input, output) {
         ) 
     }
     else if(input$plot_type4 == "c") {
-      ggplot(df04national_d, aes(x = NORMALIZED_ELECTABILITY, fill = Candidate)) +
+      ggplot(df04national_d, aes(x = NORMALIZED_ELECTABILITY, 
+                                 fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
         theme_minimal() +
@@ -833,7 +1006,8 @@ server <- function(input, output) {
         ) 
     }
     else if(input$plot_type4 == "d") {
-      ggplot(df00national_d, aes(x = NORMALIZED_ELECTABILITY, fill = Candidate)) +
+      ggplot(df00national_d, aes(x = NORMALIZED_ELECTABILITY, 
+                                 fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
         theme_minimal() +
@@ -845,7 +1019,8 @@ server <- function(input, output) {
         ) 
     }
     else if(input$plot_type4 == "e") {
-      ggplot(df00national_r, aes(x = NORMALIZED_ELECTABILITY, fill = Candidate)) +
+      ggplot(df00national_r, aes(x = NORMALIZED_ELECTABILITY, 
+                                 fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
         theme_minimal() +
@@ -881,7 +1056,8 @@ server <- function(input, output) {
         ) 
     }
     else if(input$plot_type4 == "h") {
-      ggplot(df84national_d, aes(x = NORMALIZED_ELECTABILITY, fill = Candidate)) +
+      ggplot(df84national_d, aes(x = NORMALIZED_ELECTABILITY, 
+                                 fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
         theme_minimal() +
@@ -894,84 +1070,106 @@ server <- function(input, output) {
     }
   })
     
-    output$RegSum <- renderPrint({
-      if(input$varOI_d == "df08national_d")
-        lmsum <- clogit(VoteCandidate ~ CLINTON + EDWARDS + NORMALIZED_FT + NORMALIZED_VIABILITY + 
-                        NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + strata(ID),
-                        data = df08national_d)
-      if(input$varOI_d == "df08national_r")
-        lmsum <- clogit(VoteCandidate ~ ROMNEY + HUCKABEE + NORMALIZED_FT + NORMALIZED_VIABILITY + 
-                          NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + strata(ID),
-                        data = df08national_r)
-      if(input$varOI_d == "df04national_d")
-        lmsum <- clogit(VoteCandidate ~ EDWARDS + NORMALIZED_FT + NORMALIZED_VIABILITY + 
-                          NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + strata(ID),
-                        data = df04national_d)
-      if(input$varOI_d == "df00national_d")
-        lmsum <- clogit(VoteCandidate ~ BRADLEY + NORMALIZED_FT + NORMALIZED_VIABILITY + 
-                          NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + strata(ID),
-                        data = df00national_d)
-      if(input$varOI_d == "df00national_r")
-        lmsum <- clogit(VoteCandidate ~ MCCAIN + NORMALIZED_FT + NORMALIZED_VIABILITY + 
-                          NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + strata(ID),
-                        data = df00national_r)
-      if(input$varOI_d == "df88st_d")
-        lmsum <- clogit(VoteCandidate ~ GEPHARDT + GORE + HART + NORMALIZED_FT + NORMALIZED_VIABILITY + 
-                          NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + strata(ID),
-                        data = df88st_d)
-      if(input$varOI_d == "df88st_r")
-        lmsum <- clogit(VoteCandidate ~ DOLE + KEMP + ROBERTSON + NORMALIZED_FT + NORMALIZED_VIABILITY + 
-                          NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + strata(ID),
-                        data = df88st_r)
-      if(input$varOI_d == "df84national_d")
-        lmsum <- clogit(VoteCandidate ~ HART + JACKSON + NORMALIZED_FT + NORMALIZED_VIABILITY + 
-                          NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + strata(ID),
-                        data = df84national_d)
-      print(summary(lmsum))
-    })
+  # Render regression output, based on the specific year that the user selects.
+  
+  output$RegSum <- renderPrint({
+    if(input$varOI_d == "df08national_d")
+      lmsum <- clogit(VoteCandidate ~ CLINTON + EDWARDS + 
+                        NORMALIZED_FT + NORMALIZED_VIABILITY + 
+                        NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY +
+                        strata(ID),
+                      data = df08national_d)
+    if(input$varOI_d == "df08national_r")
+      lmsum <- clogit(VoteCandidate ~ ROMNEY + HUCKABEE +
+                        NORMALIZED_FT + NORMALIZED_VIABILITY + 
+                        NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + 
+                        strata(ID),
+                      data = df08national_r)
+    if(input$varOI_d == "df04national_d")
+      lmsum <- clogit(VoteCandidate ~ EDWARDS + NORMALIZED_FT + 
+                        NORMALIZED_VIABILITY + 
+                        NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + 
+                        strata(ID),
+                      data = df04national_d)
+    if(input$varOI_d == "df00national_d")
+      lmsum <- clogit(VoteCandidate ~ BRADLEY + NORMALIZED_FT + 
+                        NORMALIZED_VIABILITY + 
+                        NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + 
+                        strata(ID),
+                      data = df00national_d)
+    if(input$varOI_d == "df00national_r")
+      lmsum <- clogit(VoteCandidate ~ MCCAIN + NORMALIZED_FT + 
+                        NORMALIZED_VIABILITY + 
+                        NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + 
+                        strata(ID),
+                      data = df00national_r)
+    if(input$varOI_d == "df88st_d")
+      lmsum <- clogit(VoteCandidate ~ GEPHARDT + GORE + HART + 
+                        NORMALIZED_FT + NORMALIZED_VIABILITY + 
+                        NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + 
+                        strata(ID),
+                      data = df88st_d)
+    if(input$varOI_d == "df88st_r")
+      lmsum <- clogit(VoteCandidate ~ DOLE + KEMP + ROBERTSON + 
+                        NORMALIZED_FT + NORMALIZED_VIABILITY + 
+                        NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + 
+                        strata(ID),
+                      data = df88st_r)
+    if(input$varOI_d == "df84national_d")
+      lmsum <- clogit(VoteCandidate ~ HART + JACKSON + 
+                        NORMALIZED_FT + NORMALIZED_VIABILITY + 
+                        NORMALIZED_ELECTABILITY + NORMALIZED_IDEOLOGY + 
+                        strata(ID),
+                      data = df84national_d)
+    print(summary(lmsum))
+  })
     
-    output$table1 <- renderDataTable({
-      if(input$tableYear1 == "df08national_d") 
-        if(input$toggleCandidate)
-          df08phone_d_counts
-        else
-          df08phone_d_counts_aggregate
-      else if(input$tableYear1 == "df08national_r") 
-        if(input$toggleCandidate)
-          df08phone_r_counts
-        else
-          df08phone_r_counts_aggregate
-      else if(input$tableYear1 == "df04national_d") 
-        if(input$toggleCandidate)
-          df04_national_d_counts
-        else
-          df04_national_d_counts_aggregate
-      else if(input$tableYear1 == "df00national_d") 
-        if(input$toggleCandidate)
-          df00_national_d_counts
-        else
-          df00_national_d_counts_aggregate
-      else if(input$tableYear1 == "df00national_r") 
-        if(input$toggleCandidate)
-          df00_national_d_counts
-        else
-          df00_national_d_counts_aggregate
-      else if(input$tableYear1 == "df88st_d") 
-        if(input$toggleCandidate)
-          df88st_d_counts
-        else
-          df88st_d_counts_aggregate
-      else if(input$tableYear1 == "df88st_r") 
-        if(input$toggleCandidate)
-          df88st_r_counts
-        else
-          df88st_r_counts_aggregate
-      else if(input$tableYear1 == "df84national_d") 
-        if(input$toggleCandidate)
-          df84cm_d_counts
-        else
-          df84cm_d_counts_aggregate
-    })
-  }
+  # Render aggregate 4-part typology results, based on the specific year that
+  # the user selects. Check whether the user wants to disaggregate results by
+  # candidate within the year, and return the corresponding results.
+  
+  output$table1 <- renderDataTable({
+    if(input$tableYear1 == "df08national_d") 
+      if(input$toggleCandidate)
+        df08phone_d_counts
+    else
+      df08phone_d_counts_aggregate
+    else if(input$tableYear1 == "df08national_r") 
+      if(input$toggleCandidate)
+        df08phone_r_counts
+    else
+      df08phone_r_counts_aggregate
+    else if(input$tableYear1 == "df04national_d") 
+      if(input$toggleCandidate)
+        df04_national_d_counts
+    else
+      df04_national_d_counts_aggregate
+    else if(input$tableYear1 == "df00national_d") 
+      if(input$toggleCandidate)
+        df00_national_d_counts
+    else
+      df00_national_d_counts_aggregate
+    else if(input$tableYear1 == "df00national_r") 
+      if(input$toggleCandidate)
+        df00_national_d_counts
+    else
+      df00_national_d_counts_aggregate
+    else if(input$tableYear1 == "df88st_d") 
+      if(input$toggleCandidate)
+        df88st_d_counts
+    else
+      df88st_d_counts_aggregate
+    else if(input$tableYear1 == "df88st_r") 
+      if(input$toggleCandidate)
+        df88st_r_counts
+    else
+      df88st_r_counts_aggregate
+    else if(input$tableYear1 == "df84national_d") 
+      if(input$toggleCandidate)
+        df84cm_d_counts
+    else
+      df84cm_d_counts_aggregate
+  })
+}
 
 shinyApp(ui = ui, server = server)
