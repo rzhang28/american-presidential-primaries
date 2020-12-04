@@ -7,29 +7,43 @@ output: html_document
 
 ```{r setup, include=FALSE}
 
+# Load relevant libraries. 
+
 library(tidyverse)
 
 ```
 
 
 ```{r}
+
+# Read in the data file from Nexis-Uni and drop NAs.
+
 mydata <- read_csv('electability_newspaper_search.csv',
                    col_type = cols(Year = col_double(),
                                    News_Mentions = col_double())) %>%
   drop_na()
 
+# Graph newspaper searches of electability over time, using points and
+# connecting them with a line.
+
 mydata %>%
   ggplot(aes(x = Year, y = News_Mentions)) + 
-  geom_point() + 
-  geom_line() +
-  theme_bw() + 
-  ylim(0, 850) + 
-  labs(
-    title = "Election-Year Articles with \"Electability\" and \"Electable\" References",
-    subtitle = "From the New York Times, Washington Post, and Christian Science Monitor.",
-    x = "Year",
-    y = "Count",
-    caption = "Note: search words are case insensitive."
-    ) + 
-  ggsave("newspaper_mentions.bmp", width = 7.5, height = 4.5)
+    geom_point() + 
+    geom_line() +
+    theme_bw() + 
+  
+    # Change limits of the y axis and set axis labels to improve readability. 
+  
+    ylim(0, 850) + 
+    labs(
+      title = "Election-Year Articles with \"Electability\" 
+      and \"Electable\" References",
+      subtitle = "From the New York Times, Washington Post, 
+      and Christian Science Monitor.",
+      x = "Year",
+      y = "Count",
+      caption = "Note: search words are case insensitive."
+      ) + 
+    ggsave("newspaper_mentions.bmp", width = 7.5, height = 4.5)
+
 ```

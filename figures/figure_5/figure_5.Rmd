@@ -7,6 +7,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 
+# Load relevant libraries
+
 library(ngramr)
 library(ggplot2)
 library(splines)
@@ -19,19 +21,37 @@ library(tidyverse)
 
 ```{r}
 
+# Read in the data file from Google N-Gram
+
 mydata <- read_csv(file = 'combined_data.csv',
                          col_type = cols(
                            year = col_double(),
                            value = col_double(),
                            word = col_character())) %>%
+  
+  # Filter for events after 1900, since I am interested in the 20th and 21st
+  # centuries. Remove unnecessary columns for cleanliness.
+  
   select(year, value, word) %>%
   filter(year >= 1900)
 
 mydata %>%
   ggplot(aes(x = year, y = value)) + 
+  
+    # Set color to word, to distinguish between the "electability" and
+    # "electable". 
+  
     geom_line(aes(color = word)) +
     theme_bw() + 
-    scale_color_discrete(name = "Word", labels = c("Electability", "Electable")) + 
+  
+    # Rename the scale to fix capitalization for ease of interpretation.
+  
+    scale_color_discrete(name = "Word",
+                         labels = c("Electability", "Electable")) + 
+  
+    # Add labels to improve interpretation, and then save the file for later
+    # access.
+  
     labs(
       title = "Google Ngram Viewer",
       subtitle = "American English (1900-2019)",
@@ -40,7 +60,6 @@ mydata %>%
       caption = "Note: search words are case insensitive."
     ) + 
     ggsave("combined_data.bmp", width = 7.5, height = 4.5)
-
 
 ```
 

@@ -8,6 +8,9 @@ output: html_document
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
+
+# Read relevant libraries.
+
 library(tidyverse)
 library(Hmisc)
 library(rqPen)
@@ -17,43 +20,42 @@ library(foreign)
 ```
 
 
-# Reading Data
+# Read Data
 
-```{r warning = FALSE}
+```{r warning=FALSE}
+
+# Read in the raw data file, cleaning by deleting NAs and only filtering for
+# results before January 29, 2008 (since that is the date before Super Tuesday
+# primaries).
 
 naes00 <- read.spss("raw_data/naes/NAES-2000-Nat-CS-19991214-20000403-Data.sav",
                     to.data.frame = TRUE, use.value.labels = FALSE) %>%
-    filter(cdate <= 20000307)
+  filter(cdate <= 20000307)
 naes00[naes00 == 998] <- NA
 naes00[naes00 == 999] <- NA
 
 ```
 
 
-## Cleaning Data
+## Clean Data
 
 ```{r}
 
 df00 <- naes00 %>%
 
-  # Voting cR11
-  # Feeling thermometers cA01, cA21
-  # Viability cN01, cN02
-  # Electability from cN06/cN10 to cN08/cN12 (*need to explain why choosing
-  # Gore*)
-  # Ideology cA09, cA28
-  # Traits  cA02, cA03, cA04, cA05, cA12, cA13, cA14, cA15
+  # Only select columns that correspond to the survey questions that I am
+  # interested in, which includes question about favorability, viability,
+  # electability, and ideology.
   
   select(ckey, cr11, 
          ca01, ca21, 
          cn01, cn02, 
          cn06, cn08,
-         
          cv04, 
          ca09, ca28
          )
 
-# rename columns
+# Rename columns for ease of data interpretation. 
 
 my_candidate <- c("BUSH", "MCCAIN")
 my_candidate_id <- as.integer(c(2, 6))
@@ -62,10 +64,12 @@ my_names <- c("ID", "voting",
               "Feeling1", "Feeling2",
               "Viability1", "Viability2", 
               "Electability1", "Electability2", 
-              
               "Ideology", 
               "Ideology1", "Ideology2"
               )
+
+# Also replace numbered survey responses with words, again for ease of
+# readability.
 
 colnames(df00) <- my_names
 
@@ -74,16 +78,26 @@ colnames(df00) <- my_names
 
 ```{r}
 
-df00$Viability1 <- ifelse(is.na(df00$Viability1), 100 - df00$Viability2, df00$Viability1)
-df00$Viability2 <- ifelse(is.na(df00$Viability2), 100 - df00$Viability1, df00$Viability2)
+# Account for viability and electability ratings that are NA.
 
-df00$Electability1 <- ifelse(is.na(df00$Electability1), 100 - df00$Electability2, df00$Electability1)
-df00$Electability2 <- ifelse(is.na(df00$Electability2), 100 - df00$Electability1, df00$Electability2)
+df00$Viability1 <- ifelse(is.na(df00$Viability1), 
+                          100 - df00$Viability2, df00$Viability1)
+df00$Viability2 <- ifelse(is.na(df00$Viability2), 
+                          100 - df00$Viability1, df00$Viability2)
+
+df00$Electability1 <- ifelse(is.na(df00$Electability1), 
+                             100 - df00$Electability2, df00$Electability1)
+df00$Electability2 <- ifelse(is.na(df00$Electability2), 
+                             100 - df00$Electability1, df00$Electability2)
 
 ```
 
 
 ```{r}
+
+# Create a new columns that includes a column named VoteCandidate, which
+# displays the respondent's ultimate primary pick. This column is needed, since
+# it will be the dependent variable in my conditional logistic regression later.
 
 df <- data.frame(my_candidate_id, my_candidate, stringsAsFactors = FALSE)
 df00 <-merge(df00, df, by.x = "voting", by.y = "my_candidate_id", all.x = TRUE)
@@ -94,19 +108,19 @@ names(df00)[names(df00) == "my_candidate"] <- "VoteCandidate"
 
 ```{r eval=FALSE, include=FALSE}
 
-# Cerify column renaming, candidates and their number 1-5 mapping must be
-# correct.
+# Visually verify that the column renaming and candidate assignments have all
+# been correct.
 
 str(df00)
 
 ```
 
 
-## Normalize ratings
+## Normalize Variables
 
 ```{r warning=FALSE}
 
-# 1) Normalize feeling thermometers
+# Build a function that normalizes feeling thermometer ratings. 
 
 my_rescale1 <- function(X) { 
   if (max(X, na.rm = TRUE) == min(X, na.rm = TRUE)) 
@@ -116,23 +130,35 @@ my_rescale1 <- function(X) {
             (max(X, na.rm = TRUE) - min(X, na.rm = TRUE)), 6)
 }
 
-df00[, c("NORMALIZED_FT1", "NORMALIZED_FT2")] <- t(apply(
-  df00[, c("Feeling1", "Feeling2")], MARGIN = 1, FUN = my_rescale1))
+# Run feeling thermometer columns (each representing the feeling thermometer
+# rating for a different candidate) through the function.
 
-# 2) Normalize viability
+df00[, c("NORMALIZED_FT1", "NORMALIZED_FT2")] <- 
+  t(apply(df00[, c("Feeling1", "Feeling2")], MARGIN = 1, FUN = my_rescale1))
+
+# Build a function that normalizes viability and electability ratings. 
 
 my_rescale2 <- function(X) round(X / sum(X, na.rm = TRUE), 6)
 
-df00[, c("NORMALIZED_VIABILITY1", "NORMALIZED_VIABILITY2")] <- t(apply(
-  df00[, c("Viability1", "Viability2")], MARGIN = 1, FUN = my_rescale2))
+# Run viability columns (each representing the viability rating for a different
+# candidate) through the function.
 
-df00[, c("NORMALIZED_ELECTABILITY1", "NORMALIZED_ELECTABILITY2")] <- t(apply(
-  df00[, c("Electability1", "Electability2")], MARGIN = 1, FUN = my_rescale2))
+df00[, c("NORMALIZED_VIABILITY1", "NORMALIZED_VIABILITY2")] <- 
+  t(apply(df00[, c("Viability1", "Viability2")], MARGIN = 1, FUN = my_rescale2))
 
-# 3) Rescale ideological distance
+# Run electability columns (each representing the electability rating for a
+# different candidate) through the function.
 
-df00[, c("temp_1", "temp_2")] <- square(
-  df00[, c("Ideology1", "Ideology2")] - df00[, "Ideology"])
+df00[, c("NORMALIZED_ELECTABILITY1", "NORMALIZED_ELECTABILITY2")] <- 
+  t(apply(df00[, c("Electability1", "Electability2")], 
+          MARGIN = 1, FUN = my_rescale2))
+
+# Calculate ideological distance according to the formula displayed in my
+# ShinyApp. Each column represents the ideological rating for a different
+# candidate.
+
+df00[, c("temp_1", "temp_2")] <- 
+  square(df00[, c("Ideology1", "Ideology2")] - df00[, "Ideology"])
 
 df00 <- df00 %>%
   rowwise() %>%
@@ -148,7 +174,7 @@ df00 <- df00 %>%
                                                temp_max_min, 6))) %>%
   select(-starts_with("temp_") )
 
-# 5) Convert NaN to NA
+# Convert NANs to NAs, which will eventually be dropped. 
 
 df00[df00 == "NaN"] <- NA
 
@@ -157,7 +183,8 @@ df00[df00 == "NaN"] <- NA
  
 ```{r}
 
-# Verify  calculations
+# Verify my calculations visually, ensuring that all variables have been
+# normalized correctly.
 
 df00[, c("NORMALIZED_FT1", "NORMALIZED_FT2", "Feeling1", "Feeling2")]
 df00[, c("NORMALIZED_VIABILITY1", "NORMALIZED_VIABILITY2", 
@@ -170,11 +197,12 @@ df00[, c("NORMALIZED_IDEOLOGY1", "NORMALIZED_IDEOLOGY2",
 ```
  
  
-## Pivoting Data (Part Two)
+## Pivot Data
 
 ```{r}
 
-# 1) Subset: df00_normalized_ft
+# Pivot my feeling thermometer ratings longer, since conditional logistic
+# regressions require multiple rows per respondent (1 row per candidate).
 
 my_cols <- c("ID", "VoteCandidate", "NORMALIZED_FT1", "NORMALIZED_FT2")
 df <- df00[, my_cols]
@@ -186,7 +214,8 @@ df <- df %>%
                cols = -c(ID, VoteCandidate))
 df_final <- df
 
-# 2) Subset: df00_normalized_viability
+# Pivot my viability ratings longer, since conditional logistic regressions
+# require multiple rows per respondent (1 row per candidate).
 
 my_cols <- c("ID", "NORMALIZED_VIABILITY1", "NORMALIZED_VIABILITY2")
 df <- df00[, my_cols]
@@ -197,13 +226,16 @@ df <- df %>%
                values_to = "NORMALIZED_VIABILITY", 
                cols = -ID)
 
+# Merge the pivoted viability ratings with the already-pivoted tibble.
+
 df_final = merge(df_final, df, by = c("ID", "Candidate"))
 
-# Convert VoteCandidate to 0, 1
+# Convert vote candidate to 0s and 1s, rather than 1s and 2s. 
 
 df_final$VoteCandidate <-  1 * (df_final$Candidate == df_final$VoteCandidate)
 
-# 3) Subset: df00_normalized_electability
+# Pivot my electability ratings longer, since conditional logistic regressions
+# require multiple rows per respondent (1 row per candidate).
 
 my_cols <- c("ID", "NORMALIZED_ELECTABILITY1", "NORMALIZED_ELECTABILITY2")
 df <- df00[, my_cols]
@@ -214,9 +246,12 @@ df <- df %>%
                values_to = "NORMALIZED_ELECTABILITY", 
                cols = -ID)
 
+# Merge the pivoted viability ratings with the already-pivoted tibble.
+
 df_final = merge(df_final, df, by = c("ID", "Candidate"))
 
-# 4) Subset: df00_normalized_ideology
+# Pivot my ideology ratings longer, since conditional logistic regressions
+# require multiple rows per respondent (1 row per candidate).
 
 my_cols <- c("ID", "NORMALIZED_IDEOLOGY1", "NORMALIZED_IDEOLOGY2")
 df <- df00[, my_cols]
@@ -227,6 +262,8 @@ df <- df %>%
                values_to = "NORMALIZED_IDEOLOGY", 
                cols = -ID)
 
+# Merge the pivoted ideology ratings with the already-pivoted tibble.
+
 df_final = merge(df_final, df, by = c("ID", "Candidate"))
 
 ```
@@ -234,30 +271,28 @@ df_final = merge(df_final, df, by = c("ID", "Candidate"))
 
 ```{r}
 
-# Create new columns using candidate names, assign 0 to all
+# Create new columns using candidate names, assigning 0 to all.
+
 df_final[, sort(my_candidate)] <- 0
 
-# Get index when intersection column name/value matches
+# Get index when the intersection column name and value match, in order to
+# identify the candidate that each respodent voted for.
+
 my_index <- cbind(seq_len(nrow(df_final)), 
                   match(df_final$Candidate, names(df_final)[-1]))
 
-# Assign 1 to my_index cells
+# Assign 1 to my_index cells.
+
 df_final[-1][my_index] <- 1
 
 ```
 
 
-## Writing Cleaned Dataset
+## Write Cleaned Dataset
 
 ```{r}
 
-df_final_1 <- df_final %>%
-  drop_na() 
-
-```
-
-
-```{r}
+# Write my cleaned dataset for later use, when calculating my regressnions.
 
 df_final %>%
   drop_na() %>%
@@ -266,9 +301,13 @@ df_final %>%
 ```
 
 
-# Calculating Buckets
+# Calculate 4-Part Voter Typology
 
 ```{r}
+
+# Write new tibble that determines whether a respondent voted for the candidate
+# that he or she viewed most strategically, or for the candidate that he or she
+# viewed most sincerely, or both.
 
 df_final_2 <- df_final %>%
   rowwise() %>%
@@ -288,66 +327,50 @@ df_final_2 <- df_final %>%
 
 ```{r}
 
+# Write tibble that includes counts, as grouped by year. 
+
 df_final_2 %>%
   group_by(Candidate, SINCERE_MAX2, STRATEGIC_MAX2) %>%
   count() %>%
   group_by(Candidate) %>%
+  
+  # Convert raw counts into percent, for ease of interpretation.
+  
   mutate(percent = n / sum(n),
          df = "df00_national_r") %>%
-  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure3/df00_national_r_counts.csv")
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/
+            Figures/Figure3/df00_national_r_counts.csv")
+
+# Write tibble that includes counts, as grouped by candidate per year. 
 
 df_final_2 %>%
   group_by(SINCERE_MAX2, STRATEGIC_MAX2) %>%
   count() %>%
   group_by() %>%
+  
+  # Convert raw counts into percent, for ease of interpretation.
+  
   mutate(percent = n / sum(n),
          df = "df00_national_r") %>%
-  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure3/df00_national_r_counts_aggregate.csv")
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/
+            Figures/Figure3/df00_national_r_counts_aggregate.csv")
 
 ```
 
 
-## Make Graphs
+## Segment 4-Part Voter Typology by Demographic
 
 ```{r}
 
-df_final %>%
-  ggplot(aes(x = NORMALIZED_ELECTABILITY)) +
-    geom_density() +
-    facet_wrap(~ Candidate) +
-    theme_bw() + 
-    labs(
-      title = "Candidate Electability",
-      x = "Normalized Electability",
-      y = "Density"
-    ) +
-  ggsave("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure2/naes00_national_r_electability.bmp", width = 7.5, height = 4.5)
-
-df_final %>%
-  ggplot(aes(x = NORMALIZED_VIABILITY)) +
-    geom_density() +
-    facet_wrap(~ Candidate) +
-    theme_bw() + 
-    labs(
-      title = "Candidate Viability",
-      x = "Normalized Viability",
-      y = "Density"
-    ) +
-  ggsave("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure2/naes00_national_r_viability.bmp", width = 7.5, height = 4.5)
-
-```
-
-
-## Demograhic Tables
-
-```{r}
-
-# Race
+# Calculate my 4-type voter typology, as segmented by race. 
 
 df_final_2 %>%
   inner_join(naes00, by = c("ID" = "ckey")) %>%
   group_by(SINCERE_MAX2, STRATEGIC_MAX2, cw03) %>%
   count() %>%
+  
+  # Segment respondents by voter type.
+  
   mutate(sincere_strategic = case_when(
     (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
@@ -355,6 +378,9 @@ df_final_2 %>%
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
     )) %>%
   group_by(cw03) %>%
+  
+  # Segment voter type by each race. 
+  
   mutate(percent = n / sum(n),
          df = "naes00_national_r",
          race = case_when(
@@ -362,14 +388,18 @@ df_final_2 %>%
            cw03 == "2" ~ "BLACK",
            cw03 == "3" ~ "ASIAN",
            cw03 == "4" ~ "OTHER")) %>%
-  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/race/naes00_national_r_race.csv")
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/
+            Figures/Figure10/race/naes00_national_r_race.csv")
 
-# Education
+# Calculate my 4-type voter typology, as segmented by education level 
 
 df_final_2 %>%
   inner_join(naes00, by = c("ID" = "ckey")) %>%
   group_by(SINCERE_MAX2, STRATEGIC_MAX2, cw06) %>%
   count() %>%
+  
+  # Segment respondents by voter type.
+  
   mutate(sincere_strategic = case_when(
     (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
@@ -377,6 +407,9 @@ df_final_2 %>%
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
     )) %>%
   group_by(cw06) %>%
+  
+  # Segment voter type by each education level.
+  
   mutate(percent = n / sum(n),
          df = "naes00_national_r",
          education = case_when(
@@ -389,14 +422,18 @@ df_final_2 %>%
            cw06 == "7" ~ "BACHELORS",
            cw06 == "8" ~ "SOMEPROFESSIONAL",
            cw06 == "9" ~ "PROFESSIONAL")) %>%
-  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/education/naes00_national_r_education.csv")
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/
+            Figures/Figure10/education/naes00_national_r_education.csv")
 
-# Age
+# Calculate my 4-type voter typology, as segmented by age.
 
 df_final_2 %>%
   inner_join(naes00, by = c("ID" = "ckey")) %>%
   group_by(SINCERE_MAX2, STRATEGIC_MAX2, cw02) %>%
   count() %>%
+  
+  # Segment respondents by voter type.
+  
   mutate(sincere_strategic = case_when(
     (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
@@ -404,17 +441,24 @@ df_final_2 %>%
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
     )) %>%
   group_by(cw02) %>%
+  
+  # Segment voter type by each age.
+  
   mutate(percent = n / sum(n),
          df = "naes00_national_r",
          age = cw02) %>%
-  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/age/naes00_national_r_age.csv")
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/
+            Figures/Figure10/age/naes00_national_r_age.csv")
 
-# Ideology
+# Calculate my 4-type voter typology, as segmented by ideology. 
 
 df_final_2 %>%
   inner_join(naes00, by = c("ID" = "ckey")) %>%
   group_by(SINCERE_MAX2, STRATEGIC_MAX2, cv04) %>%
   count() %>%
+  
+  # Segment respondents by voter type.
+  
   mutate(sincere_strategic = case_when(
     (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
@@ -422,6 +466,9 @@ df_final_2 %>%
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
     )) %>%
   group_by(cv04) %>%
+  
+  # Segment voter type by ideological identification.
+  
   mutate(percent = n / sum(n),
          df = "naes00_national_r",
          ideology = case_when(
@@ -430,14 +477,19 @@ df_final_2 %>%
            cv04 == "3" ~ "MODERATE",
            cv04 == "4" ~ "SOMEWHATLIBERAL",
            cv04 == "5" ~ "VERYLIBERAL")) %>%
-  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/ideology/naes00_national_r_ideology.csv")
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/
+            Figures/Figure10/ideology/naes00_national_r_ideology.csv")
 
-# Party ID strength
+# Calculate my 4-type voter typology, as segmented by strength of party
+# identification.
 
 df_final_2 %>%
   inner_join(naes00, by = c("ID" = "ckey")) %>%
   group_by(SINCERE_MAX2, STRATEGIC_MAX2, cv02) %>%
   count() %>%
+  
+  # Segment respondents by voter type.
+  
   mutate(sincere_strategic = case_when(
     (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
@@ -445,19 +497,27 @@ df_final_2 %>%
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
     )) %>%
   group_by(cv02) %>%
+  
+  # Segment voter type by strength of party identification.
+  
   mutate(percent = n / sum(n),
          df = "naes00_national_r",
          party_strength = case_when(
            cv02 == "1" ~ "STRONG",
            cv02 == "2" ~ "NOTVERYSTRONG")) %>%
-  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/party_strength/naes00_national_r_party_strength.csv")
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/
+            party_strength/naes00_national_r_party_strength.csv")
 
-# Political interest
+# Calculate my 4-type voter typology, as segmented by level of political
+# interest.
 
 df_final_2 %>%
   inner_join(naes00, by = c("ID" = "ckey")) %>%
   group_by(SINCERE_MAX2, STRATEGIC_MAX2, ck02) %>%
   count() %>%
+  
+  # Segment respondents by voter type.
+  
   mutate(sincere_strategic = case_when(
     (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
@@ -465,6 +525,9 @@ df_final_2 %>%
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
     )) %>%
   group_by(ck02) %>%
+  
+  # Segment voter type by strength of political interest.
+  
   mutate(percent = n / sum(n),
          df = "naes00_national_r",
          political_interest = case_when(
@@ -472,14 +535,18 @@ df_final_2 %>%
            ck02 == "2" ~ "SOMEWHATCLOSELY",
            ck02 == "3" ~ "NOTTOOCLOSELY")) %>%
   # I took out 4!
-  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/political_interest/naes00_national_r_political_interest.csv")
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/
+            political_interest/naes00_national_r_political_interest.csv")
 
-# Political efficacy
+# Calculate my 4-type voter typology, as segmented by political efficacy. 
 
 df_final_2 %>%
   inner_join(naes00, by = c("ID" = "ckey")) %>%
   group_by(SINCERE_MAX2, STRATEGIC_MAX2, cm16) %>%
   count() %>%
+  
+  # Segment respondents by voter type.
+  
   mutate(sincere_strategic = case_when(
     (SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 0) ~ 1,
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0) ~ 2,
@@ -487,6 +554,9 @@ df_final_2 %>%
     (SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1) ~ 4,
     )) %>%
   group_by(cm16) %>%
+  
+  # Segment voter type by level of political efficacy.
+  
   mutate(percent = n / sum(n),
          df = "naes00_national_r",
          efficacy = case_when(
@@ -494,14 +564,15 @@ df_final_2 %>%
            cm16 == "2" ~ "SOMEWHATAGREE",
            cm16 == "3" ~ "SOMEWHATDISAGREE",
            cm16 == "4" ~ "STRONGLYDISAGREE")) %>%
-  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/political_efficacy/naes00_national_r_political_efficacy.csv")
+  write.csv("/Users/ryan/Google Drive/2020_2021/Thesis/Figures/Figure10/
+            political_efficacy/naes00_national_r_political_efficacy.csv")
 
 ```
 
 
 ```{r include=FALSE}
 
-rm(list=ls())
+rm(list = ls())
 
 ```
 

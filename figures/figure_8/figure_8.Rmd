@@ -7,6 +7,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 
+# Load relevant libraries.
+
 library(tidyverse)
 library(mdthemes)
 
@@ -15,22 +17,33 @@ library(mdthemes)
 
 ```{r}
 
+# Read in polling frequency data. 
+
 mydata <- read_csv('polling_frequency.csv',
                    col_type = cols(year = col_double(),
                                    polls = col_double())) %>%
   drop_na()
 
+# Create a graph showing changing level of polling over time. Connect the points
+# using geom_line().
+
 mydata %>%
   ggplot(aes(x = year, y = polls)) + 
-  geom_point() +
-  geom_line() + 
-  theme_bw() + 
-  labs(
-    title = "Polls Rising",
-    subtitle = "Tracking the the number of national-level polls employing \nlive interviewers every election year from 1952 to 2016.",
-    x = "Year",
-    y = "Count",
-    caption = expression(paste("Source: ", italic("The Timeline of Presidential Elections")))
-    ) + 
+    geom_point() +
+    geom_line() + 
+    theme_bw() + 
+    
+    # Introduce axis labels to improve graph interpretability.
+    
+    labs(
+      title = "Polls Rising",
+      subtitle = "Tracking the the number of national-level polls 
+      employing \nlive interviewers every election year from 1952 to 2016.",
+      x = "Year",
+      y = "Count",
+      caption = expression(
+        paste("Source: ", italic("The Timeline of Presidential Elections")))
+      ) + 
   ggsave("polling_frequency.bmp", width = 7.5, height = 4.5)
+
 ```

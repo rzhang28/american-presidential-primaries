@@ -6,50 +6,67 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
+
+# Load relevant libraries.
+
 library(tidyverse)
 library(dplyr)
+
 ```
 
 
 ```{r}
 
+# Read in the political efficacy files for each year, only selecting needed columns. 
+
 naes00_national_d <- read_csv('naes00_national_d_political_efficacy.csv') %>%
-  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, efficacy)
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, 
+         sincere_strategic, percent, df, efficacy)
 naes00_national_r <- read_csv('naes00_national_r_political_efficacy.csv') %>%
-  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, efficacy)
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, 
+         sincere_strategic, percent, df, efficacy)
 naes04_national <- read_csv('naes04_national_political_efficacy.csv') %>%
-  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, efficacy)
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, 
+         sincere_strategic, percent, df, efficacy)
 naes08_phone_d <- read_csv('naes08_phone_d_political_efficacy.csv') %>%
-  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, efficacy)
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, 
+         sincere_strategic, percent, df, efficacy)
 naes08_phone_r <- read_csv('naes08_phone_r_political_efficacy.csv') %>%
-  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, sincere_strategic, percent, df, efficacy)
+  select(X1, SINCERE_MAX2, STRATEGIC_MAX2, n, 
+         sincere_strategic, percent, df, efficacy)
+
+# Combine each year's tibbles into a single, large tibble. Use rbind() because
+# the columns in each constituent file are the same.
 
 allFrame <- data.frame(rbind(naes00_national_d, naes00_national_r,
                              naes04_national, naes08_phone_d, naes08_phone_r))
 
-# Instrumental voting
+# Create a table that shows strategic voting levels across each year. 
 
 allFrame2 <- allFrame %>%
-#  filter(df != "anes84_cm_d") %>%
-#  filter(df != "anes88_st_d") %>%
-#  filter(df != "anes88_st_r") %>%
   group_by(SINCERE_MAX2, STRATEGIC_MAX2, efficacy) %>%
   summarize(count = sum(n)) %>%
   group_by(efficacy) %>%
+  
+  # Change measurement from absolute count to percentage of overall vote, for
+  # ease of interpretation.
+  
   mutate(percent = count / sum(count)) %>%
   select(-count) %>%
   filter(SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1)
 
-# Expressive voting
+# Create a table that shows sincere voting levels across each year. 
 
 allFrame2 <- allFrame %>%
-#  filter(df != "anes84_cm_d") %>%
-#  filter(df != "anes88_st_d") %>%
-#  filter(df != "anes88_st_r") %>%
   group_by(SINCERE_MAX2, STRATEGIC_MAX2, efficacy) %>%
   summarize(count = sum(n)) %>%
   group_by(efficacy) %>%
+  
+  # Change measurement from absolute count to percentage of overall vote, for
+  # ease of interpretation.
+  
   mutate(percent = count / sum(count)) %>%
   select(-count) %>%
   filter(SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0)

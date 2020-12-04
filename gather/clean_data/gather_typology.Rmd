@@ -6,46 +6,49 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
+
+# Load relevant libraries.
+
+library(tidyverse)
+
 ```
 
 ```{r}
-df08phone_d_counts_aggregate <-
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_d_counts_aggregate.csv")
-df08phone_d_counts <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_d_counts.csv")
-df08phone_r_counts_aggregate <-
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_r_counts_aggregate.csv")
-df08phone_r_counts <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df08phone_r_counts.csv")
-df04_national_d_counts_aggregate <-
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df04_national_d_counts_aggregate.csv")
-df04_national_d_counts <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df04_national_d_counts.csv")
-df00_national_d_counts_aggregate <-
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_d_counts_aggregate.csv")
-df00_national_d_counts <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_d_counts.csv")
-df00_national_r_counts_aggregate <-
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_r_counts_aggregate.csv")
-df00_national_r_counts <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df00_national_r_counts.csv")
-df88st_d_counts_aggregate <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_d_counts_aggregate.csv")
-df88st_d_counts <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_d_counts.csv")
-df88st_r_counts_aggregate <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_r_counts_aggregate.csv")
-df88st_r_counts <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df88st_r_counts.csv")
-df84cm_d_counts_aggregate <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df84cm_d_counts_aggregate.csv")
-df84cm_d_counts <- 
-  read.csv("/Users/ryan/Desktop/Gov-50/american-presidential-primaries/clean_data/df84cm_d_counts.csv")
+
+# Read the individual files (there are two types -- aggregate, which sorts by
+# year, and non-aggregate, which sorts by candidate per year).
+
+df08phone_d_counts_aggregate <- read.csv("df08phone_d_counts_aggregate.csv")
+df08phone_d_counts <- read.csv("df08phone_d_counts.csv")
+df08phone_r_counts_aggregate <- read.csv("df08phone_r_counts_aggregate.csv")
+df08phone_r_counts <- read.csv("df08phone_r_counts.csv")
+df04_national_d_counts_aggregate <- 
+  read.csv("df04_national_d_counts_aggregate.csv")
+df04_national_d_counts <- read.csv("df04_national_d_counts.csv")
+df00_national_d_counts_aggregate <- 
+  read.csv("df00_national_d_counts_aggregate.csv")
+df00_national_d_counts <- read.csv("df00_national_d_counts.csv")
+df00_national_r_counts_aggregate <- 
+  read.csv("df00_national_r_counts_aggregate.csv")
+df00_national_r_counts <- read.csv("df00_national_r_counts.csv")
+df88st_d_counts_aggregate <- read.csv("df88st_d_counts_aggregate.csv")
+df88st_d_counts <- read.csv("df88st_d_counts.csv")
+df88st_r_counts_aggregate <- read.csv("df88st_r_counts_aggregate.csv")
+df88st_r_counts <- read.csv("df88st_r_counts.csv")
+df84cm_d_counts_aggregate <- read.csv("df84cm_d_counts_aggregate.csv")
+df84cm_d_counts <- read.csv("df84cm_d_counts.csv")
+
 ```
 
 
 ```{r}
+
+# Write a function that renames the SINCERE and STRATEGIC columns, replacing
+# with the 4-part typology of voters. The purpose is to make the table more
+# easily readable when displayed in the ShinyApp.
+
 clean_aggregate <- function(x) {
   string = deparse(substitute(x))
   x %>%
@@ -54,10 +57,19 @@ clean_aggregate <- function(x) {
       SINCERE_MAX2 == 0 & STRATEGIC_MAX2 == 1 ~ "Instrumental",
       SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 0 ~ "Expressive",
       SINCERE_MAX2 == 1 & STRATEGIC_MAX2 == 1 ~ "Ideal"),
+      
+      # Multiply percent by 100 to change from a proportion to percentages, 
+      
       Percent = 100 * percent) %>%
+    
+    # Do not select the columns I no longer need, and save as a .csv file,
+    # replacing the old files.
+    
     select(-c(X, n, percent, SINCERE_MAX2, STRATEGIC_MAX2)) %>%
     write.csv(., paste(string, ".csv", sep = ""))
 }
+
+# Run each of the individaul files through the clean_aggregate() function.
 
 clean_aggregate(df08phone_d_counts_aggregate)
 clean_aggregate(df08phone_d_counts)
@@ -75,5 +87,6 @@ clean_aggregate(df88st_r_counts_aggregate)
 clean_aggregate(df88st_r_counts)
 clean_aggregate(df84cm_d_counts_aggregate)
 clean_aggregate(df84cm_d_counts)
+
 ```
 
