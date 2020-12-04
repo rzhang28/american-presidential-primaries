@@ -391,14 +391,13 @@ tabPanel("Strategic Considerations",
              the party's nomination that year serves as the baseline."),
              sidebarLayout(
                  sidebarPanel(
-                     h4("Choose the Model:"),
-                     
+
                      # Select electoral contest to display the conditional
                      # logistic regression output.
                      
                      selectInput(
                        "varOI_d",
-                       "Election Year (Party):",
+                       "Choose the Model:",
                        choices = c(
                          "2008 (D)" = "df08national_d",
                          "2008 (R)" = "df08national_r",
@@ -720,7 +719,7 @@ server <- function(input, output) {
           caption = "Source: NAES (2000)"
         ) 
     }
-    else if(input$plot_type2 == "f") {
+    else if(input$plot_type1 == "f") {
       ggplot(df88st_d, aes(x = NORMALIZED_FT, fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
@@ -732,7 +731,7 @@ server <- function(input, output) {
           caption = "Source: ANES (1988)"
         ) 
     }
-    else if(input$plot_type2 == "g") {
+    else if(input$plot_type1 == "g") {
       ggplot(df88st_r, aes(x = NORMALIZED_FT, fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
@@ -744,7 +743,7 @@ server <- function(input, output) {
           caption = "Source: ANES (1988)"
         ) 
     }
-    else if(input$plot_type2 == "h") {
+    else if(input$plot_type1 == "h") {
       ggplot(df84national_d, aes(x = NORMALIZED_FT, fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
@@ -924,7 +923,7 @@ server <- function(input, output) {
           caption = "Source: NAES (2000)"
         ) 
     }
-    else if(input$plot_type2 == "f") {
+    else if(input$plot_type3 == "f") {
       ggplot(df88st_d, aes(x = NORMALIZED_IDEOLOGY, fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
@@ -936,7 +935,7 @@ server <- function(input, output) {
           caption = "Source: ANES (1988)"
         ) 
     }
-    else if(input$plot_type2 == "g") {
+    else if(input$plot_type3 == "g") {
       ggplot(df88st_r, aes(x = NORMALIZED_IDEOLOGY, fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
@@ -948,7 +947,7 @@ server <- function(input, output) {
           caption = "Source: ANES (1988)"
         ) 
     }
-    else if(input$plot_type2 == "h") {
+    else if(input$plot_type3 == "h") {
       ggplot(df84national_d, aes(x = NORMALIZED_IDEOLOGY, fill = Candidate)) +
         geom_histogram(binwidth = 0.1) + 
         facet_wrap(~ Candidate) +
