@@ -1,5 +1,5 @@
 ---
-title: "anes"
+title: "anes-88-d"
 author: "Ryan Zhang"
 date: "10/12/2020"
 output: html_document
@@ -21,7 +21,7 @@ library(ggthemes)
 ```
 
 
-# Read Data
+## Read Data
 
 ```{r warning=FALSE}
 

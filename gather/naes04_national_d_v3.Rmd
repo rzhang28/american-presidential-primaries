@@ -1,5 +1,5 @@
 ---
-title: "anes"
+title: "naes-04-d"
 author: "Ryan Zhang"
 date: "10/12/2020"
 output: html_document
@@ -20,7 +20,7 @@ library(foreign)
 ```
 
 
-# Reading Data
+## Reading Data
 
 ```{r warning=FALSE}
 
@@ -330,7 +330,7 @@ df_final %>%
 ```
 
 
-# Calculate 4-Part Voter Typology
+## Calculate 4-Part Voter Typology
 
 ```{r}
 

@@ -1,5 +1,5 @@
 ---
-title: "anes"
+title: "anes-88-r"
 author: "Ryan Zhang"
 date: "10/12/2020"
 output: html_document
@@ -20,7 +20,7 @@ library(foreign)
 ```
 
 
-# Read Data
+## Read Data
 
 ```{r warning=FALSE}
 
