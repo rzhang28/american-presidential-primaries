@@ -103,17 +103,18 @@ ui <- navbarPage(
                                  over time."),
                                  p("Electability is not a novel phenomenon. At
                                  first, one might believe that voting based
-                                 on electability is a unique response to Trump. 
-                                 However, electability’s presence steadily 
+                                 on electability is a unique response to Trump,
+                                 but the evidence shows that 
+                                 electability’s presence has actually steadily 
                                  risen in our national political discourse. 
-                                 Google's N-gram Viewer reveals
+                                 Google's N-gram Viewer documents
                                  the rising usage of “electability” and 
                                  “electable” in American English. 
                                  Strikingly, mentions of these two
                                  terms were extremely until the 1970s, 
                                  after which mentions rose from significantly, 
                                  with particularly steep increases during 
-                                   presidential election years."))),
+                                 presidential election years."))),
                  fluidRow(column(5, 
                                  h3("News coverage has increasingly covered 
                                  electability."),
@@ -145,10 +146,10 @@ ui <- navbarPage(
                                  being conducted during presidential election 
                                  cycles, from 17 polls in 1952 to 308 polls in 
                                  2016. The rise of polls has subsequently 
-                                 affected the tone of political media coverage. 
-                                 Polls convey critical information about the 
-                                 competitivity of each candidate, but they 
-                                 often do not reveal substance about candidate 
+                                 affected the tone of political media coverage,
+                                 since polls convey critical information about 
+                                 the competitivity of each candidate, but 
+                                 do not reveal substance about candidate 
                                  policy positions."))),
                  h2("Our Goal"),
                  p("In this project, I investigate the behavior of 
@@ -157,14 +158,16 @@ ui <- navbarPage(
                  strive to answer two fundamental questions:"),
                  tags$ol(
                    tags$li(
-                     p("How heavily dostrategic considerations weigh vis-a-vis 
-                     sincere considerations when primary voters cast their 
-                     ballots?")),
+                     p("How heavily do strategic considerations weigh vis-a-vis 
+                     sincere considerations in the minds of primary voters 
+                     when they cast their ballots?")),
                    tags$li(
                      p("In any given election, what percentage of primary voters 
-                     vote strategically?"))),
+                     vote strategically versus sincerely?"))),
                  p("In addressing these questions, I will study eight 
-                 nominating contests that span 30 years. Political scientist 
+                 nominating contests that span 30 years, drawing from iterations
+                 of both the National American Election Study and the Annenberg 
+                 National Election Study. Political scientist 
                  James Ceaser once declared, “No systematic
                  theory about primary voting is likely to develop for some time 
                  because each campaign is so different.” I attempt to meet 
@@ -428,26 +431,38 @@ tabPanel("Strategic Considerations",
                  )
              ),
              h2("Intepretation"),
-             p("To interpret conditional logistic regressions, the coefficients
-             indicate that for every one-unit increase in that variable, the
-             effect on the natural log of the odds of selecting one candidate
-             over another candidate changes by the value of that coefficient. 
-             Because each variable is scaled 
+             p("The plain coefficients, which are displayed in the “coef” 
+             column, indicate that for every one-unit increase in the 
+             corresponding variable, the effect on the natural log of the odds 
+             of selecting one candidate over another candidate changes by the 
+             value of that coefficient. Because each variable is scaled 
              from 0 to 1, a one-unit increase in that variable represents 
              the entire range of the variable. Conditional logistic 
              regressions allow us to directly compare the impact of 
              each variable on choice relative to another by comparing the 
              coefficients generated in the model."),
              p("The effect of a given variable is easier to interpret when 
-             presented as an odds ratio, which is calculated by taking the 
+             presented as an odds ratio, which is shown in the “exp(coef)” 
+             column and is calculated by taking the 
              natural exponent of the coefficient: e^β.  A one-unit increase 
              of a variable, holding other variables constant, leads to 
              a factor change in the odds of selecting one candidate over
-             another of that value. For example, if a respondent were 
-             to change his or her viability rating for a candidate from 
-             a 0 to a 1, and if the odds of him or her selecting that candidate 
-             increase by a factor of 12.607, the respondent is 12.607 
-             times more likely to select that candidate.")),
+             another of that value."),
+             p("For example, take the 2008 Democratic nominating contest.
+             The exp(coef) for viability is 28.10369, meaning that if a 
+             respondent in that election were to change his or her viability 
+             rating for a candidate from a 0 to a 1, the respondent would be 
+             28.10369 times more likely to select that candidate. Similarly, 
+             since the exp(coef) for electability is 45.40493, that means that 
+             if a respondent were to change his or her electability rating for a
+             candidate in that election from a 0 to a 1, the respondent would be
+             45.40493 times more likely to vote for that candidate. Similar 
+             interpretations apply for the feeling thermometer and ideological 
+             distance variables across all nominating contests."),
+             p("All in all, by examining changes in odds ratios,
+             conditional logit models allow us to distill relative weights
+             that voters place on candidate favorability, viability,
+             electability, and ideological distance.")),
 
 ############## PAGE 5 ############## 
 
@@ -522,6 +537,9 @@ tabPanel("Typology of Voters",
          )),
 
 ############## PAGE 6 ############## 
+
+    # Note that below, I sometimes let the characters go beyond the 80 character
+    # limit because of URLs that took up a lot of space.
 
     tabPanel("About", 
              h2("Background"),
